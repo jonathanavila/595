@@ -21,8 +21,8 @@ cfsetispeed(&pts, 9600);
 tcsetattr(fd, TCSANOW, &pts);
 }
 
-// read buffer
-char buffer[100];
+// buffers & message
+char read_buffer[100], http_buffer[100], http_message[100];
 
 int main(int argc, char* argv[]) {
 
@@ -52,11 +52,14 @@ int main(int argc, char* argv[]) {
   Write the rest of the program below, using the read and write system calls.
   */
 
-  int bytes_read, bytes_written;
+  http_buffer[0] = '\0';
 
+  int bytes_read, bytes_written, http_cursor = 0;
+
+  // attempt to read indefinitely
   while (1) {
 
-    bytes_read = read(fd, buffer, 100);
+    bytes_read = read(fd, read_buffer, 100);
 
     if (bytes_read == -1) {
 
@@ -64,12 +67,33 @@ int main(int argc, char* argv[]) {
 
     } else if (bytes_read > 0) {
 
-      // store the full temperature strings in a variable for the server part
-      buffer[bytes_read] = '\0';
-      printf("%s", buffer);
+      // store whatever was read into the read buffer
+      read_buffer[bytes_read] = '\0';
+      
+      // add read bytes to http_buffer
+      strcat(http_buffer, read_buffer);
+      printf("%s\n", http_buffer);
 
+      // iterate through http_buffer
+      for (; http_cursor < http_cursor + bytes_read; http_cursor++) {
+
+        // if newline character found
+        if (http_buffer[http_cursor] == '\n') {
+
+          // store new temperature string in http_message
+          http_buffer[http_cursor + 1] = '\0';
+          http_message[0] = '\0';
+          strcpy(http_message, http_buffer);
+
+          // reinitialize http_buffer and http_cursor
+          http_buffer[0] = '\0';
+          http_cursor = 0;
+
+          printf("%s\n", http_message);
+
+          break;
+        }
+      }
     }
-
   }
-
 }
