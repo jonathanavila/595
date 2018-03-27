@@ -22,7 +22,7 @@ tcsetattr(fd, TCSANOW, &pts);
 }
 
 // buffers & message
-char read_buffer[100], http_buffer[100], http_message[100];
+char read_buffer[101], http_buffer[1000], http_message[101];
 
 int main(int argc, char* argv[]) {
 
@@ -53,9 +53,9 @@ int main(int argc, char* argv[]) {
   */
 
   // memset buffers and http_message
-  memset(read_buffer, 0, 100);
-  memset(http_buffer, 0, 100);
-  memset(http_message, 0, 100);
+  memset(read_buffer, 0, 101);
+  memset(http_buffer, 0, 1000);
+  memset(http_message, 0, 101);
 
   int bytes_read, bytes_written, http_cursor = 0;
 
@@ -73,9 +73,12 @@ int main(int argc, char* argv[]) {
       // store whatever was read into the read buffer
       read_buffer[bytes_read] = '\0';
 
-      printf("here\n");
+      if (strlen(http_buffer) > 0) http_cursor = strlen(http_buffer - 1);
+      else http_cursor = 0;
 
-      http_cursor = strlen(http_buffer - 1);
+      printf("http_cursor: %d\n", http_cursor);
+      printf("bytes_read: %d\n", bytes_read);
+      printf("http_buffer: %s\n", http_buffer);
       
       // add read bytes to http_buffer
       strcat(http_buffer, read_buffer);
@@ -83,12 +86,12 @@ int main(int argc, char* argv[]) {
       // iterate through http_buffer
       for (int i = http_cursor; i < http_cursor + bytes_read; i++) {
 
-        printf("here\n");
+        // printf("here\n");
 
         // if newline character found
         if (http_buffer[i] == '\n') {
 
-          printf("%d\n", i);
+          printf("i: %d\n", i);
 
           // store new temperature string in http_message
           http_buffer[i + 1] = '\0';
@@ -96,8 +99,8 @@ int main(int argc, char* argv[]) {
           strcpy(http_message, http_buffer);
 
           // reinitialize http_buffer and http_cursor
-          memset(http_buffer, 0, 100);
-          // http_buffer[0] = '\0';
+          // memset(http_buffer, 0, 101);
+          http_buffer[0] = '\0';
           // http_cursor = 0;
 
           printf("%s\n", http_message);
