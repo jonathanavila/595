@@ -52,7 +52,10 @@ int main(int argc, char* argv[]) {
   Write the rest of the program below, using the read and write system calls.
   */
 
-  http_buffer[0] = '\0';
+  // memset buffers and http_message
+  memset(read_buffer, 0, 100);
+  memset(http_buffer, 0, 100);
+  memset(http_message, 0, 100);
 
   int bytes_read, bytes_written, http_cursor = 0;
 
@@ -69,25 +72,33 @@ int main(int argc, char* argv[]) {
 
       // store whatever was read into the read buffer
       read_buffer[bytes_read] = '\0';
+
+      printf("here\n");
+
+      http_cursor = strlen(http_buffer - 1);
       
       // add read bytes to http_buffer
       strcat(http_buffer, read_buffer);
-      printf("%s\n", http_buffer);
 
       // iterate through http_buffer
-      for (; http_cursor < http_cursor + bytes_read; http_cursor++) {
+      for (int i = http_cursor; i < http_cursor + bytes_read; i++) {
+
+        printf("here\n");
 
         // if newline character found
-        if (http_buffer[http_cursor] == '\n') {
+        if (http_buffer[i] == '\n') {
+
+          printf("%d\n", i);
 
           // store new temperature string in http_message
-          http_buffer[http_cursor + 1] = '\0';
+          http_buffer[i + 1] = '\0';
           http_message[0] = '\0';
           strcpy(http_message, http_buffer);
 
           // reinitialize http_buffer and http_cursor
-          http_buffer[0] = '\0';
-          http_cursor = 0;
+          memset(http_buffer, 0, 100);
+          // http_buffer[0] = '\0';
+          // http_cursor = 0;
 
           printf("%s\n", http_message);
 
