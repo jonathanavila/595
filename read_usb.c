@@ -9,6 +9,7 @@
 #include <unistd.h>
 #include <string.h>
 
+#define BUFFER_SIZE   101
 
 /*
 This code configures the file descriptor for use as a serial port.
@@ -22,7 +23,7 @@ tcsetattr(fd, TCSANOW, &pts);
 }
 
 // buffers & message
-char read_buffer[101], http_buffer[1000], http_message[101];
+char read_buffer[BUFFER_SIZE], http_buffer[BUFFER_SIZE], http_message[BUFFER_SIZE];
 
 int main(int argc, char* argv[]) {
 
@@ -36,7 +37,7 @@ int main(int argc, char* argv[]) {
 
   // try to open the file for reading and writing
   // you may need to change the flags depending on your platform
-  int fd = open(argv[1], O_RDWR | O_NOCTTY | O_NDELAY);
+  int fd = open(file_name, O_RDWR | O_NOCTTY | O_NDELAY);
 
   if (fd < 0) {
   perror("Could not open file\n");
@@ -53,16 +54,16 @@ int main(int argc, char* argv[]) {
   */
 
   // memset buffers and http_message
-  memset(read_buffer, 0, 101);
-  memset(http_buffer, 0, 1000);
-  memset(http_message, 0, 101);
+  memset(read_buffer, 0, BUFFER_SIZE);
+  memset(http_buffer, 0, BUFFER_SIZE);
+  memset(http_message, 0, BUFFER_SIZE);
 
   int bytes_read, bytes_written, http_cursor = 0;
 
   // attempt to read indefinitely
   while (1) {
 
-    bytes_read = read(fd, read_buffer, 100);
+    bytes_read = read(fd, read_buffer, BUFFER_SIZE - 1);
 
     if (bytes_read == -1) {
 
@@ -73,12 +74,9 @@ int main(int argc, char* argv[]) {
       // store whatever was read into the read buffer
       read_buffer[bytes_read] = '\0';
 
-      if (strlen(http_buffer) > 0) http_cursor = strlen(http_buffer - 1);
+      // set cursor per http_buffer
+      if (strlen(http_buffer) > 0) http_cursor = strlen(http_buffer) - 1;
       else http_cursor = 0;
-
-      printf("http_cursor: %d\n", http_cursor);
-      printf("bytes_read: %d\n", bytes_read);
-      printf("http_buffer: %s\n", http_buffer);
       
       // add read bytes to http_buffer
       strcat(http_buffer, read_buffer);
@@ -86,24 +84,18 @@ int main(int argc, char* argv[]) {
       // iterate through http_buffer
       for (int i = http_cursor; i < http_cursor + bytes_read; i++) {
 
-        // printf("here\n");
-
         // if newline character found
         if (http_buffer[i] == '\n') {
-
-          printf("i: %d\n", i);
 
           // store new temperature string in http_message
           http_buffer[i + 1] = '\0';
           http_message[0] = '\0';
           strcpy(http_message, http_buffer);
 
-          // reinitialize http_buffer and http_cursor
-          // memset(http_buffer, 0, 101);
-          http_buffer[0] = '\0';
-          // http_cursor = 0;
+          // reinitialize http_buffer
+          memset(http_buffer, 0, 101);
 
-          printf("%s\n", http_message);
+          // printf("http_message: %s\n", http_message);
 
           break;
         }
