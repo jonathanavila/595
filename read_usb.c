@@ -11,11 +11,6 @@
 
 #include "read_usb.h"
 
-#define BUFFER_SIZE   101
-
-// buffers & message
-char read_buffer[BUFFER_SIZE], http_buffer[BUFFER_SIZE], http_message[BUFFER_SIZE];
-
 /*
 This code configures the file descriptor for use as a serial port.
 */
@@ -27,19 +22,12 @@ cfsetispeed(&pts, 9600);
 tcsetattr(fd, TCSANOW, &pts);
 }
 
-int read_usb(char* file_name) {
+// int read_usb(char* file_name) {
+int read_usb(int fd) {
 
   // try to open the file for reading and writing
   // you may need to change the flags depending on your platform
-  int fd = open(file_name, O_RDWR | O_NOCTTY | O_NDELAY);
-
-  if (fd < 0) {
-  perror("Could not open file\n");
-  exit(1);
-  }
-  else {
-  printf("Successfully opened %s for reading and writing\n", file_name);
-  }
+  // int fd = open(file_name, O_RDWR | O_NOCTTY | O_NDELAY);
 
   configure(fd);
 
@@ -83,8 +71,11 @@ int read_usb(char* file_name) {
 
           // store new temperature string in http_message
           http_buffer[i + 1] = '\0';
-          http_message[0] = '\0';
-          strcpy(http_message, http_buffer);
+
+          pthread_mutex_lock(&lock);
+            http_message[0] = '\0';
+            strcpy(http_message, http_buffer);
+          pthread_mutex_unlock(&lock);
 
           // reinitialize http_buffer
           memset(http_buffer, 0, 101);

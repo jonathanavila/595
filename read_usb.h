@@ -14,5 +14,10 @@
 
 #define BUFFER_SIZE   101
 
+// buffers & message
+char read_buffer[BUFFER_SIZE], http_buffer[BUFFER_SIZE], http_message[BUFFER_SIZE];
+
+pthread_mutex_t lock;
+
 void configure(int fd);
-int read_usb(char* file_name);
+int read_usb(int fd);
