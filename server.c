@@ -14,6 +14,9 @@ http://www.binarii.com/files/papers/c_sockets.txt
 #include <unistd.h>
 #include <errno.h>
 #include <string.h>
+#include <pthread.h>
+
+#include "read_usb.h"
 
 int start_server(int PORT_NUMBER)
 {
@@ -95,9 +98,7 @@ int start_server(int PORT_NUMBER)
 
 void* run_read_usb(void* v) {
 
-  char* fd = ""; //enter USB file descriptor  here
-  system("clang read_usb.c -o read_usb")
-  system("./read_usb " + fd);
+  read_usb("~/../../dev/tty.usbmodem1411");
   return v;
 
 }
