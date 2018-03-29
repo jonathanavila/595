@@ -58,7 +58,7 @@ int main(int argc, char* argv[]) {
   memset(http_buffer, 0, BUFFER_SIZE);
   memset(http_message, 0, BUFFER_SIZE);
 
-  int bytes_read, bytes_written, http_cursor = 0;
+  int bytes_read, http_cursor = 0;
 
   // attempt to read indefinitely
   while (1) {
