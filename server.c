@@ -93,6 +93,15 @@ int start_server(int PORT_NUMBER)
   return 0;
 }
 
+void* run_read_usb(void* v) {
+
+  char* fd = ""; //enter USB file descriptor  here
+  system("clang read_usb.c -o read_usb")
+  system("./read_usb " + fd);
+  return v;
+
+}
+
 int main(int argc, char *argv[])
 {
   // check the number of arguments
@@ -106,6 +115,12 @@ int main(int argc, char *argv[])
     printf("\nPlease specify a port number greater than 1024\n");
     exit(-1);
   }
+
+  int ret_val;
+  pthread_t t1;
+  int* placeholder;
+
+  ret_val = pthread_create(&t1, NULL, &run_read_usb, &placeholder);
 
   start_server(port_number);
 }
