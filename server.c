@@ -14,6 +14,9 @@ http://www.binarii.com/files/papers/c_sockets.txt
 #include <unistd.h>
 #include <errno.h>
 #include <string.h>
+#include <pthread.h>
+
+#include "read_usb.h"
 
 int start_server(int PORT_NUMBER)
 {
@@ -74,8 +77,16 @@ int start_server(int PORT_NUMBER)
   	// print it to standard out
   	printf("This is the incoming request:\n%s\n", request);
 
-  	// this is the message that we'll send back
-  	char *reply = "HTTP/1.1 200 OK\nContent-Type: text/html\n\n<html><p>Hello world!</p></html>";
+    sleep(3);
+
+    char reply[1024];
+    reply[0] = '\0';
+
+    strcat(reply, "HTTP/1.1 200 OK\nContent-Type: text/html\n\n<html><p>");
+    pthread_mutex_lock(&lock);
+      strcat(reply, http_message);
+    pthread_mutex_unlock(&lock);
+    strcat(reply, "</p></html>");
 
   	// 6. send: send the outgoing message (response) over the socket
   	// note that the second argument is a char*, and the third is the number of chars	
@@ -95,9 +106,7 @@ int start_server(int PORT_NUMBER)
 
 void* run_read_usb(void* v) {
 
-  char* fd = ""; //enter USB file descriptor  here
-  system("clang read_usb.c -o read_usb")
-  system("./read_usb " + fd);
+  read_usb(*(int*)v);
   return v;
 
 }
@@ -105,8 +114,8 @@ void* run_read_usb(void* v) {
 int main(int argc, char *argv[])
 {
   // check the number of arguments
-  if (argc != 2) {
-      printf("\nUsage: %s [port_number]\n", argv[0]);
+  if (argc != 3) {
+      printf("\nUsage: %s [port_number] [file_path]\n", argv[0]);
       exit(-1);
   }
 
@@ -118,9 +127,20 @@ int main(int argc, char *argv[])
 
   int ret_val;
   pthread_t t1;
-  int* placeholder;
+  // char* placeholder;
+  // placeholder = argv[2];
 
-  ret_val = pthread_create(&t1, NULL, &run_read_usb, &placeholder);
+  int fd = open(argv[2], O_RDWR | O_NOCTTY | O_NDELAY);
+
+  if (fd < 0) {
+  perror("Could not open file\n");
+  exit(1);
+  }
+  else {
+  printf("Successfully opened %s for reading and writing\n", argv[2]);
+  }
+
+  ret_val = pthread_create(&t1, NULL, &run_read_usb, &fd);
 
   start_server(port_number);
 }
