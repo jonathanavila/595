@@ -4,10 +4,10 @@ ARGS = -Wall
 all: read_usb server
 
 read_usb:
-	$(CC) -o read_usb $(ARGS) read_usb.c
+	$(CC) -c $(ARGS) read_usb.c
 
-server:
-	$(CC) -o server $(ARGS) server.c
+server: read_usb
+	$(CC) -o server $(ARGS) server.c read_usb.c
 
 clean: 
-	rm -rf read_usb server
+	rm -rf server
