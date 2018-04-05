@@ -8,6 +8,7 @@
 #include <termios.h>
 #include <unistd.h>
 #include <string.h>
+#include <pthread.h>
 
 #include "read_usb.h"
 
