@@ -2,8 +2,9 @@
 <!DOCTYPE html>
 <meta charset="utf-8">
 <head>
-<script src='jquery.js'></script>
-    <script src="https://d3js.org/d3.v4.min.js"></script>
+<script src="jquery.js"></script>
+<script src="https://d3js.org/d3.v4.min.js"></script>
+<script src="requests.js"></script>
 
 <style>
 button {
@@ -44,41 +45,46 @@ text-align: right;
     </div>
     <h3>Pick a time period to view data from: </h3> 
       <td>
-        <select>
+        <select
+          onchange="getTimeValue(this.value)"
+          selected="10">
              <option value='10'>10 seconds</option>
              <option value='30'>30 seconds</option>
              <option value='1'>1 minute</option>
             <option value='2'>2 minutes</option>
         </select></td> 
-
+<!-- d3.json(url,function(...) {
+...
+})
+.header("Content-Type","application/x-www-form-urlencoded")
+  .send("POST","a=b"); -->
     
   </div>  
    <div id = "rightSide" class = "division">
     <div>
       <h3>Press to turn signal on or off</h3>
       <button id="buttonOnOff" value="OnOff" type="button"
-              onClick="turnOffOn()">OnOff</button>
+               class="onoff">OnOff</button>
     </div>  
     <div>
       <h3>Press to turn view temperature in Fahrenheit or Celsius</h3>
       <button id="buttonF" value="Fahrenheit" type = "button"
-              onclick="getFahrenheit()">Fahrenheit</button>
+              onclick="getFahrenheit()" class="Fahrenheit">Fahrenheit</button>
       <button id="buttonC" value = "Celsius" type = "button"
-              onclick="getCelsius()">Celsius</button>
+              onclick="getCelsius()" class="Celsius">Celsius</button>
     </div>
     <div>
       <h3>Select and view the current: high, low, average or actual temperature</h3>
       <td>
-        <select>
+        <select onchange="setStatType(this.value)">
              <option value='Average'>Average</option>
-             <option value='Hi'>Hi</option>
+             <option value='Hi'>High</option>
              <option value='Low'>Low</option>
             <option value='Actual'>Actual</option>
         </select></td> 
       <td colspan='4'><input id='display' name='display' disabled></input></td>
     </div>
     <p id="chart"></p>
-    <script src="https://d3js.org/d3.v4.min.js"></script>
         <script>
 
       // set the dimensions and margins of the graph
@@ -149,11 +155,10 @@ text-align: right;
 
 
 <script>
-
+//send a request to the server
 function turnOffOn() {
   console.log("Turning on/off");
   //make a get request here
-
 
 }
 
@@ -171,8 +176,18 @@ function getCelsius() {
 
 }
 
+function getTimeValue(val) {
+  console.log(val);
+}
+
+
+function setStatType(val) {
+  console.log(val);
+}
+
 
 </script>
+
 
 </body>
 

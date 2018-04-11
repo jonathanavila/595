@@ -84,7 +84,6 @@ int start_server(int PORT_NUMBER, char* htmlpage)
     reply[0] = '\0';
     strcat(reply, "HTTP/1.1 200 OK\nContent-Type: text/html\n\n");
 
-    //char* html = "<html><head><script src='jquery.js'></script><style> button { font-size: 200%; width: 40px; } input { font-size: 14px; height: 40px; text-align: right; } </style></head><body><table><tr><td><div class='onoffswitch'><input type='checkbox' name='onoffswitch' class='onoffswitch-checkbox' id='myonoffswitch' checked><label class='onoffswitch-label' for='myonoffswitch'><span class='onoffswitch-inner'></span><span class='onoffswitch-switch'></span></label></div></td><td><b>On/Off</b></td><td><div class='onoffswitch'><input type='checkbox' name='onoffswitch' class='onoffswitch-checkbox' id='myonoffswitch' checked><label class='onoffswitch-label' for='myonoffswitch'><span class='onoffswitch-inner'></span><span class='onoffswitch-switch'></span></label></div></td><td><b>Fahrenheit/Celsius</b></td></tr><tr><td><select><option value='Average'>Average</option><option value='Hi'>Hi</option><option value='Low'>Low</option><option value='Actual'>Actual</option></select></td> <td colspan='4'><input id='display' name='display' disabled></input></td></tr></table><span id='output'></span><script src='calc.js'></script></body></html>";
     FILE *fp;
     char s[10000];
     fp = fopen(htmlpage,"rb");
@@ -108,11 +107,16 @@ int start_server(int PORT_NUMBER, char* htmlpage)
   	// 6. send: send the outgoing message (response) over the socket
   	// note that the second argument is a char*, and the third is the number of chars	
   	send(fd, reply, strlen(reply), 0);
+    // while(1) {
+    
+    // }
+
   	
   	// 7. close: close the connection
   	close(fd);
 	  printf("Server closed connection\n");
   }
+
 
   // 8. close: close the socket
   close(sock);
@@ -122,7 +126,6 @@ int start_server(int PORT_NUMBER, char* htmlpage)
 }
 
 void* run_read_usb(void* v) {
-
   read_usb(*(int*)v);
   return v;
 
