@@ -26,11 +26,7 @@ tcsetattr(fd, TCSANOW, &pts);
 // int read_usb(char* file_name) {
 int read_usb(int fd) {
 
-  // try to open the file for reading and writing
-  // you may need to change the flags depending on your platform
-  // int fd = open(file_name, O_RDWR | O_NOCTTY | O_NDELAY);
-
-  configure(fd);
+  // configure(fd);
 
   /*
   Write the rest of the program below, using the read and write system calls.
@@ -41,10 +37,24 @@ int read_usb(int fd) {
   memset(http_buffer, 0, BUFFER_SIZE);
   memset(http_message, 0, BUFFER_SIZE);
 
-  int bytes_read, http_cursor = 0;
+  int bytes_read, http_cursor = 0;  
 
   // attempt to read indefinitely
   while (1) {
+
+    // dummy
+    pthread_mutex_lock(&write_lock);
+      if (write_buffer[0] != '\0') {
+
+        int bytes_written = write_usb(fd, &write_buffer[0]);
+        if (bytes_written < 1) {
+          perror("Write failure");
+          exit(1);
+        }
+
+        write_buffer[0] = '\0';
+      }
+    pthread_mutex_unlock(&write_lock);
 
     bytes_read = read(fd, read_buffer, BUFFER_SIZE - 1);
 
@@ -73,13 +83,13 @@ int read_usb(int fd) {
           // store new temperature string in http_message
           http_buffer[i + 1] = '\0';
 
-          pthread_mutex_lock(&lock);
+          pthread_mutex_lock(&read_lock);
             http_message[0] = '\0';
             strcpy(http_message, http_buffer);
-          pthread_mutex_unlock(&lock);
+          pthread_mutex_unlock(&read_lock);
 
           // reinitialize http_buffer
-          memset(http_buffer, 0, 101);
+          memset(http_buffer, 0, BUFFER_SIZE);
 
           printf("http_message: %s\n", http_message);
 
@@ -88,4 +98,18 @@ int read_usb(int fd) {
       }
     }
   }
+}
+
+// for writing to the arduino
+int write_usb(int fd, char* command) {
+
+  // char* buffer = malloc(sizeof(char) * 2);
+  // buffer[0] = command;
+  // buffer[1] = '\0';
+
+  int ret_val = write(fd, command, sizeof(char));
+
+  // free(buffer);
+
+  return ret_val;
 }

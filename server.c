@@ -18,7 +18,7 @@ http://www.binarii.com/files/papers/c_sockets.txt
 
 #include "read_usb.h"
 
-int start_server(int PORT_NUMBER)
+int run_server(int PORT_NUMBER, int write_fd)
 {
 
   // structs to represent the server and client
@@ -59,42 +59,67 @@ int start_server(int PORT_NUMBER)
   // once you get here, the server is set up and about to start listening
   printf("\nServer configured to listen on port %d\n", PORT_NUMBER);
   fflush(stdout);
- 
 
-  // 4. accept: wait here until we get a connection on that port
+  // 4. accept
   int sin_size = sizeof(struct sockaddr_in);
-  int fd = accept(sock, (struct sockaddr *)&client_addr,(socklen_t *)&sin_size);
-  if (fd != -1) {
-  	printf("Server got a connection from (%s, %d)\n", inet_ntoa(client_addr.sin_addr),ntohs(client_addr.sin_port));
-        
-  	// buffer to read data into
-  	char request[1024];
-  	
-  	// 5. recv: read incoming message (request) into buffer
-  	int bytes_received = recv(fd,request,1024,0);
-  	// null-terminate the string
-  	request[bytes_received] = '\0';
-  	// print it to standard out
-  	printf("This is the incoming request:\n%s\n", request);
+  int fd = -1;
 
-    sleep(3);
+  // wait for arduino reboot
+  sleep(3);
 
-    char reply[1024];
-    reply[0] = '\0';
+  // dummy write
+  int msg_temp = 0;
 
-    strcat(reply, "HTTP/1.1 200 OK\nContent-Type: text/html\n\n<html><p>");
-    pthread_mutex_lock(&lock);
-      strcat(reply, http_message);
-    pthread_mutex_unlock(&lock);
-    strcat(reply, "</p></html>");
+  while (1) {
 
-  	// 6. send: send the outgoing message (response) over the socket
-  	// note that the second argument is a char*, and the third is the number of chars	
-  	send(fd, reply, strlen(reply), 0);
-  	
-  	// 7. close: close the connection
-  	close(fd);
-	  printf("Server closed connection\n");
+    // wait here until we get a connection on the port
+    fd = accept(sock, (struct sockaddr *)&client_addr,(socklen_t *)&sin_size);
+
+    // process request
+    if (fd != -1) {
+
+      // dummy write
+      pthread_mutex_lock(&write_lock);
+        if (msg_temp == 0) {
+          write_buffer[0] = 'b';
+          msg_temp = 1;
+        } else {
+          write_buffer[0] = 'r';
+          msg_temp = 0;
+        }
+      pthread_mutex_unlock(&write_lock);
+
+      printf("Server got a connection from (%s, %d)\n", inet_ntoa(client_addr.sin_addr),ntohs(client_addr.sin_port));
+          
+      // buffer to read data into
+      char request[1024];
+      
+      // 5. recv: read incoming message (request) into buffer
+      int bytes_received = recv(fd,request,1024,0);
+      // null-terminate the string
+      request[bytes_received] = '\0';
+      // print it to standard out
+      printf("This is the incoming request:\n%s\n", request);
+
+      char reply[1024];
+      reply[0] = '\0';
+
+      // send message
+      strcat(reply, "HTTP/1.1 200 OK\nContent-Type: text/html\n\n<html><p>");
+      pthread_mutex_lock(&read_lock);
+        strcat(reply, http_message);
+      pthread_mutex_unlock(&read_lock);
+      strcat(reply, "</p></html>");
+
+      // 6. send: send the outgoing message (response) over the socket
+      // note that the second argument is a char*, and the third is the number of chars 
+      send(fd, reply, strlen(reply), 0);
+      
+      // 7. close: close the connection
+      // NOTE: if you don't do this, the page never loads
+      close(fd);
+      printf("Server closed connection\n");
+    }
   }
 
   // 8. close: close the socket
@@ -104,6 +129,7 @@ int start_server(int PORT_NUMBER)
   return 0;
 }
 
+// for the purpose of starting a new thread with read_usb
 void* run_read_usb(void* v) {
 
   read_usb(*(int*)v);
@@ -119,19 +145,16 @@ int main(int argc, char *argv[])
       exit(-1);
   }
 
+  memset(write_buffer, 0, BUFFER_SIZE);
+
   int port_number = atoi(argv[1]);
   if (port_number <= 1024) {
     printf("\nPlease specify a port number greater than 1024\n");
     exit(-1);
   }
 
-  int ret_val;
-  pthread_t t1;
-  // char* placeholder;
-  // placeholder = argv[2];
-
+  // open file
   int fd = open(argv[2], O_RDWR | O_NOCTTY | O_NDELAY);
-
   if (fd < 0) {
   perror("Could not open file\n");
   exit(1);
@@ -140,8 +163,14 @@ int main(int argc, char *argv[])
   printf("Successfully opened %s for reading and writing\n", argv[2]);
   }
 
+  configure(fd);
+
+  int ret_val;
+  pthread_t t1;
+
+  // TODO: check ret_val
   ret_val = pthread_create(&t1, NULL, &run_read_usb, &fd);
 
-  start_server(port_number);
+  run_server(port_number, fd);
 }
 
