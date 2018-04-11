@@ -18,7 +18,7 @@ http://www.binarii.com/files/papers/c_sockets.txt
 
 #include "read_usb.h"
 
-int start_server(int PORT_NUMBER)
+int start_server(int PORT_NUMBER, char* htmlpage)
 {
 
   // structs to represent the server and client
@@ -79,14 +79,31 @@ int start_server(int PORT_NUMBER)
 
     sleep(3);
 
-    char reply[1024];
-    reply[0] = '\0';
 
-    strcat(reply, "HTTP/1.1 200 OK\nContent-Type: text/html\n\n<html><p>");
-    pthread_mutex_lock(&lock);
-      strcat(reply, http_message);
-    pthread_mutex_unlock(&lock);
-    strcat(reply, "</p></html>");
+    char reply[10000];
+    reply[0] = '\0';
+    strcat(reply, "HTTP/1.1 200 OK\nContent-Type: text/html\n\n");
+
+    //char* html = "<html><head><script src='jquery.js'></script><style> button { font-size: 200%; width: 40px; } input { font-size: 14px; height: 40px; text-align: right; } </style></head><body><table><tr><td><div class='onoffswitch'><input type='checkbox' name='onoffswitch' class='onoffswitch-checkbox' id='myonoffswitch' checked><label class='onoffswitch-label' for='myonoffswitch'><span class='onoffswitch-inner'></span><span class='onoffswitch-switch'></span></label></div></td><td><b>On/Off</b></td><td><div class='onoffswitch'><input type='checkbox' name='onoffswitch' class='onoffswitch-checkbox' id='myonoffswitch' checked><label class='onoffswitch-label' for='myonoffswitch'><span class='onoffswitch-inner'></span><span class='onoffswitch-switch'></span></label></div></td><td><b>Fahrenheit/Celsius</b></td></tr><tr><td><select><option value='Average'>Average</option><option value='Hi'>Hi</option><option value='Low'>Low</option><option value='Actual'>Actual</option></select></td> <td colspan='4'><input id='display' name='display' disabled></input></td></tr></table><span id='output'></span><script src='calc.js'></script></body></html>";
+    FILE *fp;
+    char s[10000];
+    fp = fopen(htmlpage,"rb");
+    while( fgets (s, 100, fp)!=NULL ) {
+        puts(s);
+        pthread_mutex_lock(&lock);
+        strcat(reply, s);
+        pthread_mutex_unlock(&lock);
+     }
+     fclose(fp);
+
+  printf("PRINTING MESSAGE\n %s\n", reply);
+  //strcat(reply, html);
+
+  // strcat(reply, "HTTP/1.1 200 OK\nContent-Type: text/html\n\n<html><p>");
+  // pthread_mutex_lock(&lock);
+  //   strcat(reply, http_message);
+  // pthread_mutex_unlock(&lock);
+  // strcat(reply, "</p></html>");
 
   	// 6. send: send the outgoing message (response) over the socket
   	// note that the second argument is a char*, and the third is the number of chars	
@@ -114,12 +131,13 @@ void* run_read_usb(void* v) {
 int main(int argc, char *argv[])
 {
   // check the number of arguments
-  if (argc != 3) {
-      printf("\nUsage: %s [port_number] [file_path]\n", argv[0]);
+  if (argc != 4) {
+      printf("\nUsage: %s [port_number] [file_path] [html_filepath]\n", argv[0]);
       exit(-1);
   }
 
   int port_number = atoi(argv[1]);
+  //get the port number, return if the port number is not greater than 1024
   if (port_number <= 1024) {
     printf("\nPlease specify a port number greater than 1024\n");
     exit(-1);
@@ -127,9 +145,8 @@ int main(int argc, char *argv[])
 
   int ret_val;
   pthread_t t1;
-  // char* placeholder;
-  // placeholder = argv[2];
 
+  //open the file
   int fd = open(argv[2], O_RDWR | O_NOCTTY | O_NDELAY);
 
   if (fd < 0) {
@@ -142,6 +159,7 @@ int main(int argc, char *argv[])
 
   ret_val = pthread_create(&t1, NULL, &run_read_usb, &fd);
 
-  start_server(port_number);
+
+  start_server(port_number, argv[3]);
 }
 

@@ -1,11 +1,31 @@
 <html>
+<!DOCTYPE html>
+<meta charset="utf-8">
 <head>
-<script src="jquery.js"></script>
+<script src='jquery.js'></script>
+    <script src="https://d3js.org/d3.v4.min.js"></script>
 
 <style>
 button {
-font-size: 200%;
-width: 40px;
+font-size: 100%;
+width: 160px;
+}
+
+
+
+.line {
+  fill: none;
+  stroke: steelblue;
+  stroke-width: 2px;
+}
+
+body {
+  background-color: #93B874;
+}
+
+.division{
+  float: left;
+  padding-right:30px;
 }
 
 input {
@@ -16,27 +36,143 @@ text-align: right;
 
 </style>
 </head>
-
 <body>
+  <div id="leftSide" class = "division">
+    <div>
+      <h1> 595 PROJECT: GROUP 15</h1> 
+      <h2>Jonathan Avila, Erik Marks, Carson Stack</h2>
+    </div>
+    <h3>Pick a time period to view data from: </h3> 
+      <td>
+        <select>
+             <option value='10'>10 seconds</option>
+             <option value='30'>30 seconds</option>
+             <option value='1'>1 minute</option>
+            <option value='2'>2 minutes</option>
+        </select></td> 
 
-<table>
-<tr>
-  <td><select>
-     <option value="Average">Average</option>
-     <option value="Hi">Hi</option>
-     <option value="Low">Low</option>
-    <option value="Actual">Actual</option>
-    </select> 
-  <td colspan="4"><input id="display" name="display" disabled></input></td>
-</tr>
+    
+  </div>  
+   <div id = "rightSide" class = "division">
+    <div>
+      <h3>Press to turn signal on or off</h3>
+      <button id="buttonOnOff" value="OnOff" type="button"
+              onClick="turnOffOn()">OnOff</button>
+    </div>  
+    <div>
+      <h3>Press to turn view temperature in Fahrenheit or Celsius</h3>
+      <button id="buttonF" value="Fahrenheit" type = "button"
+              onclick="getFahrenheit()">Fahrenheit</button>
+      <button id="buttonC" value = "Celsius" type = "button"
+              onclick="getCelsius()">Celsius</button>
+    </div>
+    <div>
+      <h3>Select and view the current: high, low, average or actual temperature</h3>
+      <td>
+        <select>
+             <option value='Average'>Average</option>
+             <option value='Hi'>Hi</option>
+             <option value='Low'>Low</option>
+            <option value='Actual'>Actual</option>
+        </select></td> 
+      <td colspan='4'><input id='display' name='display' disabled></input></td>
+    </div>
+    <p id="chart"></p>
+    <script src="https://d3js.org/d3.v4.min.js"></script>
+        <script>
+
+      // set the dimensions and margins of the graph
+      var margin = {top: 20, right: 20, bottom: 30, left: 50},
+          width = 960 - margin.left - margin.right,
+          height = 500 - margin.top - margin.bottom;
+
+      // parse the date / time
+      var parseTime = d3.timeParse("%d-%b-%y");
+
+      // set the ranges
+      var x = d3.scaleTime().range([0, width]);
+      var y = d3.scaleLinear().range([height, 0]);
+
+      // define the line
+      var valueline = d3.line()
+          .x(function(d) { return x(d.date); })
+          .y(function(d) { return y(d.close); });
+
+      // append the svg obgect to the body of the page
+      // appends a 'group' element to 'svg'
+      // moves the 'group' element to the top left margin
+      var svg = d3.select("body").append("svg")
+          .attr("width", width + margin.left + margin.right)
+          .attr("height", height + margin.top + margin.bottom)
+        .append("g")
+          .attr("transform",
+                "translate(" + margin.left + "," + margin.top + ")");
+
+      // Get the data
+      d3.csv("data.csv", function(error, data) {
+        if (error) {
+              console.log("Can't read csv");
+              throw error;
+          }
+          console.log("hi");
+        // format the data
+        data.forEach(function(d) {
+            d.date = parseTime(d.date);
+            d.close = +d.close;
+        });
 
 
-</table>
+        // Scale the range of the data
+        x.domain(d3.extent(data, function(d) { return d.date; }));
+        y.domain([0, d3.max(data, function(d) { return d.close; })]);
+        console.log("hi");
 
-<span id='output'></span>
+        // Add the valueline path.
+        svg.append("path")
+            .data([data])
+            .attr("class", "line")
+            .attr("d", valueline);
 
-<script src="calc.js"></script>
+        // Add the X Axis
+        svg.append("g")
+            .attr("transform", "translate(0," + height + ")")
+            .call(d3.axisBottom(x));
+        console.log("hi");
 
+        // Add the Y Axis
+        svg.append("g")
+            .call(d3.axisLeft(y));
+
+      });
+      </script>    
+  </div>
+
+
+<script>
+
+function turnOffOn() {
+  console.log("Turning on/off");
+  //make a get request here
+
+
+}
+
+function getFahrenheit() {
+  console.log("Getting Fahrenheit");
+  //make a get request here
+
+
+}
+
+function getCelsius() {
+  console.log("Getting celisus!");
+  //make a get request here
+
+
+}
+
+
+</script>
 
 </body>
 
