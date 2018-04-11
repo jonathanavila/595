@@ -68,15 +68,15 @@ text-align: right;
     </div>  
     <div>
       <h3>Press to turn view temperature in Fahrenheit or Celsius</h3>
-      <button id="buttonF" value="Fahrenheit" type = "button"
-              onclick="getFahrenheit()" class="Fahrenheit">Fahrenheit</button>
-      <button id="buttonC" value = "Celsius" type = "button"
-              onclick="getCelsius()" class="Celsius">Celsius</button>
+      <button id="buttonT" type = "button"
+             class="Temperature">Temperature</button>
+      <input id='Temp' name='Temp' value = 'Celsius' disabled></input>
     </div>
     <div>
       <h3>Select and view the current: high, low, average or actual temperature</h3>
       <td>
-        <select onchange="setStatType(this.value)">
+        <select 
+       class="stat">
              <option value='Average'>Average</option>
              <option value='Hi'>High</option>
              <option value='Low'>Low</option>
