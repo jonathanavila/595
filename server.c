@@ -18,7 +18,7 @@ http://www.binarii.com/files/papers/c_sockets.txt
 
 #include "read_usb.h"
 
-int start_server(int PORT_NUMBER, char* htmlpage)
+int start_server(int PORT_NUMBER, char* requests, char* chart, char* htmlpage)
 {
 
   // structs to represent the server and client
@@ -81,11 +81,46 @@ int start_server(int PORT_NUMBER, char* htmlpage)
 
 
     char reply[10000];
-    reply[0] = '\0';
-    strcat(reply, "HTTP/1.1 200 OK\nContent-Type: text/html\n\n");
+
 
     FILE *fp;
     char s[10000];
+
+
+    reply[0] = '\0';
+    strcat(reply, "HTTP/1.1 200 OK\nContent-Type: application/javascript\n\n");
+
+    fp = fopen(requests, "rb");
+    while( fgets (s, 100, fp)!=NULL ) {
+        puts(s);
+        pthread_mutex_lock(&lock);
+        strcat(reply, s);
+        pthread_mutex_unlock(&lock);
+     }
+     fclose(fp);
+
+     printf("PRINTING MESSAGE\n %s\n", reply);
+
+     send(fd, reply, strlen(reply), 0);
+
+    reply[0] = '\0';
+    strcat(reply, "HTTP/1.1 200 OK\nContent-Type: application/javascript\n\n");
+    fp = fopen(chart,"rb");
+    while( fgets (s, 100, fp)!=NULL ) {
+        puts(s);
+        pthread_mutex_lock(&lock);
+        strcat(reply, s);
+        pthread_mutex_unlock(&lock);
+     }
+     fclose(fp);
+
+     printf("PRINTING MESSAGE\n %s\n", reply);
+
+     send(fd, reply, strlen(reply), 0);
+
+    reply[0] = '\0';
+    strcat(reply, "HTTP/1.1 200 OK\nContent-Type: text/html\n\n");
+
     fp = fopen(htmlpage,"rb");
     while( fgets (s, 100, fp)!=NULL ) {
         puts(s);
@@ -134,8 +169,8 @@ void* run_read_usb(void* v) {
 int main(int argc, char *argv[])
 {
   // check the number of arguments
-  if (argc != 4) {
-      printf("\nUsage: %s [port_number] [file_path] [html_filepath]\n", argv[0]);
+  if (argc != 6) {
+      printf("\nUsage: %s [port_number] [file_path] [request.js] [chart.js] [html_filepath]\n", argv[0]);
       exit(-1);
   }
 
@@ -163,6 +198,6 @@ int main(int argc, char *argv[])
   ret_val = pthread_create(&t1, NULL, &run_read_usb, &fd);
 
 
-  start_server(port_number, argv[3]);
+  start_server(port_number, argv[3], argv[4], argv[5]);
 }
 
