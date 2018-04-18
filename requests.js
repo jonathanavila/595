@@ -6,7 +6,6 @@ var lastTemperatureType = "Celsius"
 
 $(document).ready(function() {
 
-	getStat();
 	$('button').on('click', function() {
 		var buttonPressed = $(this);
 		if (buttonPressed.attr("class") == "Temperature") {
@@ -130,19 +129,16 @@ getLow = function() {
 }
 
 convertTemperature = function(val) {
-	if (lastTemperatureType == "Celsius") return val + 'C';
-	else return 32 + (9*val)/5 + 'F'
+	if (lastTemperatureType == "Celsius") return val;
+	else return 32 + (9*val)/5;
 }
 
 
 getSubArray = function() {
-	if (temps.length < Number(lastTimeFrame)) {
-		console.log(temps.length)
+	if (temps.length <= Number(lastTimeFrame)) {
 		return temps;
 	}
 	else {
-		console.log(temps.length)
-
 		startInterval = temps.length - Number(lastTimeFrame) -1;
 		return temps.slice(startInterval, temps.length - 1)
 	}

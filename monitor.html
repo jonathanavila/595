@@ -2,9 +2,156 @@
 <!DOCTYPE html>
 <meta charset="utf-8">
 <head>
-<script src="jquery.js"></script>
+<script src="https://code.jquery.com/jquery.js"></script>
 <script src="https://d3js.org/d3.v4.min.js"></script>
-<script src="requests.js"></script>
+<script type="text/javascript">
+    
+var lastStatType = "Actual"
+var lastTimeFrame = "10"
+var onOff = "On"
+var lastTemperatureType = "Celsius"
+
+$(document).ready(function() {
+
+  $('button').on('click', function() {
+    var buttonPressed = $(this);
+    if (buttonPressed.attr("class") == "Temperature") {
+      console.log("Sending GET localhost:3001/ color")
+      if  (lastTemperatureType == "Celsius") {
+        lastTemperatureType = "Fahrenheit"
+      } else {
+        lastTemperatureType = "Celsius"
+
+      }
+      $.ajax({
+        type: "GET",
+        url: "localhost:3001/color"
+      });
+      document.getElementById("Temp").value = lastTemperatureType;
+      getStat();
+
+    } else if (buttonPressed.attr("class") == "onoff") {
+      console.log(temps[0])
+    }
+    updateData();
+  })
+
+  $('select').on('change', function() {
+    var optionSelected = $(this);
+    if (optionSelected.attr("class")== "stat") {
+      if (optionSelected.val() != lastStatType) {
+        lastStatType = optionSelected.val()
+        getStat();
+      }
+    }
+    else if (optionSelected.attr("class") == "timeFrame") {
+      if (optionSelected.val() != lastTimeFrame) {
+        lastTimeFrame = optionSelected.val() 
+        getStat();
+      } 
+    }
+    updateData();
+
+  });
+
+});
+
+getStat = function() {
+  if (lastStatType == "High") {
+    getHigh();
+  }
+  else if (lastStatType == "Low") {
+    getLow();
+  }
+  else if (lastStatType == "Average") {
+    getAverage();
+  }
+  else {
+    getActual();
+  }
+}
+
+getAverage = function() {
+  var num = Number(lastTimeFrame)
+  var sum = 0
+  var avg = 0;
+  if (temps.length < num) {
+    for (var i = 0; i < temps.length; i++) {
+      sum += Number(temps[i].y)
+    }
+    console.log(avg)
+  } else {
+    for (var i = temps.length - num; i < temps.length; i++) {
+      sum += Number(temps[i].y)
+    }
+  }
+  avg = sum / num
+  document.getElementById("display").value = convertTemperature(avg);
+
+
+  
+}
+getActual = function() {
+  document.getElementById("display").value = 
+    convertTemperature(temps[temps.length-1].y)
+
+}
+
+getHigh = function() {
+  var num = Number(lastTimeFrame)
+  var max = 0
+  if (temps.length < num) {
+    for (var i = 0; i < temps.length; i++) {
+      if (max < Number(temps[i].y)) {
+        max = Number(temps[i].y)
+      }
+    }
+  } else {
+    for (var i = temps.length - num; i < temps.length; i++) {
+      if (max < Number(temps[i].y)) {
+        max = Number(temps[i].y)
+      }
+    }
+  }
+  document.getElementById("display").value = convertTemperature(max);
+
+}
+getLow = function() {
+  num = Number(lastTimeFrame)
+  var min = Number.POSITIVE_INFINITY
+  if (temps.length < num) {
+    for (var i = 0; i < temps.length; i++) {
+      if (min > Number(temps[i].y)) {
+        min = Number(temps[i].y)
+      }
+    }
+  } else {
+    for (var i = temps.length - num; i < temps.length; i++) {
+      if (min > Number(temps[i].y)) {
+        min = Number(temps[i].y)
+      }
+    }
+  }
+  document.getElementById("display").value = convertTemperature(min);
+}
+
+convertTemperature = function(val) {
+  if (lastTemperatureType == "Celsius") return val;
+  else return 32 + (9*val)/5;
+}
+
+
+getSubArray = function() {
+  if (temps.length <= Number(lastTimeFrame)) {
+    return temps;
+  }
+  else {
+    startInterval = temps.length - Number(lastTimeFrame) -1;
+    return temps.slice(startInterval, temps.length - 1)
+  }
+}
+</script>
+
 
 <style>
 button {
@@ -81,12 +228,88 @@ text-align: right;
   </div>  
      <div id = "rightSide" class = "division">
       <p id="chart"></p>
-      <script src="chart.js"></script> 
+      
+</body>
+
+<script type="text/javascript">
+  /*
+ * Implement all your JavaScript in this file!
+ */
+
+ var display = null; 
+var temps = [];
+
+var y0 = 0
+var x0 = -1
+
+var height = 320;
+var width = 520;
+
+var svg = d3.select("#chart").append("svg").attr("width", width + 30).attr("height", height + 30);
+
+
+var inter = setInterval(function() {
+    updateData();
+  }, 1000);
+
+
+
+function updateData() {
+  x0++;
+  y0 = 30 + 10*Math.random();
+  temps.push({"x": x0, "y": y0});
+     
+    minimum = 0 
+    if (temps.length - 1 - Number(lastTimeFrame) >= 0) {
+        minimum = temps.length - Number(lastTimeFrame);
+    }
+    maximum = temps.length - 1; 
+    if (temps.length <= Number(lastTimeFrame)){
+        maximum = Number(lastTimeFrame);
+    }
+
+
+    var x = d3.scaleLinear().domain([minimum, maximum]).range([0, width]);
+  var y = d3.scaleLinear().domain([0, convertTemperature(50)]).range([height, 0]);
+
+
+  var xAxis = d3.axisBottom().scale(x).ticks(5);
+    var yAxis = d3.axisRight().scale(y).ticks(10);
+
+
+
+
+  var line = d3.line()
+     .x(function(d) { return x(d.x); })
+     .y(function(d) { return y(convertTemperature(d.y)); });
+
+    d3.selectAll("svg > *").remove();
+
+
+  var graph = svg.append("path").attr("d", line(getSubArray())).attr("stroke", "blue")
+                            .attr("stroke-width", 1)
+                            .attr("fill", "none");
+
+    svg.append("g")
+        .attr("class", "y axis")
+        .attr("transform", "translate(0, 0 )")
+        .call(yAxis)
+
+    svg.append("g")
+        .attr("class", "x axis")
+        .attr("transform", "translate(0," + height + ")")
+        .call(xAxis);   
+
+
+
+    getStat();
+                
+}
+</script>
   </div>
 
 
 
-</body>
 
 
 

@@ -81,76 +81,41 @@ int start_server(int PORT_NUMBER, char* requests, char* chart, char* htmlpage)
 
 
     char reply[10000];
-
-
     FILE *fp;
     char s[10000];
 
 
     reply[0] = '\0';
-    strcat(reply, "HTTP/1.1 200 OK\nContent-Type: application/javascript\n\n");
-
-    fp = fopen(requests, "rb");
-    while( fgets (s, 100, fp)!=NULL ) {
-        puts(s);
-        pthread_mutex_lock(&lock);
-        strcat(reply, s);
-        pthread_mutex_unlock(&lock);
-     }
-     fclose(fp);
-
-     printf("PRINTING MESSAGE\n %s\n", reply);
-
-     send(fd, reply, strlen(reply), 0);
-
-    reply[0] = '\0';
-    strcat(reply, "HTTP/1.1 200 OK\nContent-Type: application/javascript\n\n");
-    fp = fopen(chart,"rb");
-    while( fgets (s, 100, fp)!=NULL ) {
-        puts(s);
-        pthread_mutex_lock(&lock);
-        strcat(reply, s);
-        pthread_mutex_unlock(&lock);
-     }
-     fclose(fp);
-
-     printf("PRINTING MESSAGE\n %s\n", reply);
-
-     send(fd, reply, strlen(reply), 0);
-
-    reply[0] = '\0';
     strcat(reply, "HTTP/1.1 200 OK\nContent-Type: text/html\n\n");
-
     fp = fopen(htmlpage,"rb");
     while( fgets (s, 100, fp)!=NULL ) {
-        puts(s);
+        // puts(s);
+            // printf("boner");
         pthread_mutex_lock(&lock);
         strcat(reply, s);
         pthread_mutex_unlock(&lock);
      }
-     fclose(fp);
-
-  printf("PRINTING MESSAGE\n %s\n", reply);
-  //strcat(reply, html);
-
-  // strcat(reply, "HTTP/1.1 200 OK\nContent-Type: text/html\n\n<html><p>");
-  // pthread_mutex_lock(&lock);
-  //   strcat(reply, http_message);
-  // pthread_mutex_unlock(&lock);
-  // strcat(reply, "</p></html>");
+    fclose(fp);
+    strcat(reply, "</p></html>");
 
   	// 6. send: send the outgoing message (response) over the socket
   	// note that the second argument is a char*, and the third is the number of chars	
   	send(fd, reply, strlen(reply), 0);
-    // while(1) {
-    
-    // }
 
-  	
+
+
+    // request[0] = '\0';
+
+    // int bytes_received2 = recv(fd, request, 1024, 0);
+    // request[bytes_received2] = '\0';
+    // printf("This is the incoming request:\n%s\n", request);
+
   	// 7. close: close the connection
   	close(fd);
 	  printf("Server closed connection\n");
   }
+
+
 
 
   // 8. close: close the socket
@@ -200,4 +165,48 @@ int main(int argc, char *argv[])
 
   start_server(port_number, argv[3], argv[4], argv[5]);
 }
+
+
+
+    // reply[0] = '\0';
+    // strcat(reply, "HTTP/1.1 200 OK\nContent-Type: text/javascript\n\n");
+
+    // fp = fopen(requests, "rb");
+    // while( fgets (s, 100, fp)!=NULL ) {
+    //     puts(s);
+    //     pthread_mutex_lock(&lock);
+    //     strcat(reply, s);
+    //     pthread_mutex_unlock(&lock);
+    //  }
+    //  fclose(fp);
+
+    //  printf("PRINTING MESSAGE\n %s\n", reply);
+
+    //  send(fd, reply, strlen(reply), 0);
+
+    // reply[0] = '\0';
+    // strcat(reply, "HTTP/1.1 200 OK\nContent-Type: text/javascript\n\n");
+    // fp = fopen(chart,"rb");
+    // while( fgets (s, 100, fp)!=NULL ) {
+    //     puts(s);
+    //     pthread_mutex_lock(&lock);
+    //     strcat(reply, s);
+    //     pthread_mutex_unlock(&lock);
+    //  }
+    //  fclose(fp);
+
+    // //  printf("PRINTING MESSAGE\n %s\n", reply);
+
+    //  send(fd, reply, strlen(reply), 0);
+
+
+
+  // printf("PRINTING MESSAGE\n %s\n", reply);
+  //strcat(reply, html);
+
+  // strcat(reply, "HTTP/1.1 200 OK\nContent-Type: text/html\n\n<html><p>");
+  // pthread_mutex_lock(&lock);
+  //   strcat(reply, http_message);
+  // pthread_mutex_unlock(&lock);
+  // strcat(reply, "</p></html>");
 
