@@ -18,7 +18,7 @@ http://www.binarii.com/files/papers/c_sockets.txt
 
 #include "read_usb.h"
 
-int start_server(int PORT_NUMBER, char* requests, char* chart, char* htmlpage)
+int run_server(int PORT_NUMBER, int write_fd)
 {
 
   // structs to represent the server and client
@@ -59,64 +59,120 @@ int start_server(int PORT_NUMBER, char* requests, char* chart, char* htmlpage)
   // once you get here, the server is set up and about to start listening
   printf("\nServer configured to listen on port %d\n", PORT_NUMBER);
   fflush(stdout);
- 
 
-  // 4. accept: wait here until we get a connection on that port
+  // 4. accept
   int sin_size = sizeof(struct sockaddr_in);
-  int fd = accept(sock, (struct sockaddr *)&client_addr,(socklen_t *)&sin_size);
+
+  int fd = -1;
+  
+  // Initial GET, all HTML
+  fd = accept(sock, (struct sockaddr *)&client_addr,(socklen_t *)&sin_size);
+
+  // process request
   if (fd != -1) {
-  	printf("Server got a connection from (%s, %d)\n", inet_ntoa(client_addr.sin_addr),ntohs(client_addr.sin_port));
-        
-  	// buffer to read data into
-  	char request[1024];
-  	
-  	// 5. recv: read incoming message (request) into buffer
-  	int bytes_received = recv(fd,request,1024,0);
-  	// null-terminate the string
-  	request[bytes_received] = '\0';
-  	// print it to standard out
-  	printf("This is the incoming request:\n%s\n", request);
+    printf("Server got a connection from (%s, %d)\n", inet_ntoa(client_addr.sin_addr),ntohs(client_addr.sin_port));
 
-    sleep(3);
+    // buffer to read data into
+    char request[1024];
 
+    // 5. recv: read incoming message (request) into buffer
+    int bytes_received = recv(fd,request,1024,0);
+    // null-terminate the string
+    request[bytes_received] = '\0';
+    // print it to standard out
+    printf("This is the incoming request:\n%s\n", request);
 
-    char reply[10000];
+    char html[10000];
     FILE *fp;
-    char s[10000];
-
+    char file_read_buffer[BUFFER_SIZE];
 
     reply[0] = '\0';
-    strcat(reply, "HTTP/1.1 200 OK\nContent-Type: text/html\n\n");
+    strcat(html, "HTTP/1.1 200 OK\nContent-Type: text/html\n\n");
     fp = fopen(htmlpage,"rb");
     while( fgets (s, 100, fp)!=NULL ) {
-        // puts(s);
-            // printf("boner");
-        pthread_mutex_lock(&lock);
-        strcat(reply, s);
-        pthread_mutex_unlock(&lock);
+        strcat(html, s);
      }
     fclose(fp);
-    strcat(reply, "</p></html>");
+    strcat(html, "</p></html>");
 
-  	// 6. send: send the outgoing message (response) over the socket
-  	// note that the second argument is a char*, and the third is the number of chars	
-  	send(fd, reply, strlen(reply), 0);
+    // 6. send: send the outgoing message (response) over the socket
+    // note that the second argument is a char*, and the third is the number of chars	
+    send(fd, html, strlen(html), 0);
 
-
-
-    // request[0] = '\0';
-
-    // int bytes_received2 = recv(fd, request, 1024, 0);
-    // request[bytes_received2] = '\0';
-    // printf("This is the incoming request:\n%s\n", request);
-
-  	// 7. close: close the connection
-  	close(fd);
-	  printf("Server closed connection\n");
+    // 7. close: close the connection
+    close(fd);
+    printf("Server closed connection\n");
+  } else {
+   printf("some critical error\n");
+    exit(1);
   }
+  
+  // wait for Arduino to reboot
+  sleep(2);
+  
+  // Keep socket open, do Ajax stuff and communicate with client
+  while (1) {
+      
+      fd = accept(sock, (struct sockaddr *)&client_addr,(socklen_t *)&sin_size);
 
+      // process request
+      if (fd != -1) {
+      printf("Server got a connection from (%s, %d)\n", inet_ntoa(client_addr.sin_addr),ntohs(client_addr.sin_port));
 
+      // buffer to read data into
+      char request[1024];
 
+      // 5. recv: read incoming message (request) into buffer
+      int bytes_received = recv(fd,request,1024,0);
+      // null-terminate the string
+      request[bytes_received] = '\0';
+      // print it to standard out
+      printf("This is the incoming request:\n%s\n", request);
+      
+        //TODO send AJAX data
+      // dummy write
+//       pthread_mutex_lock(&write_lock);
+//         if (msg_temp == 0) {
+//           write_buffer[0] = 'b';
+//           msg_temp = 1;
+//         } else {
+//           write_buffer[0] = 'r';
+//           msg_temp = 0;
+//         }
+//       pthread_mutex_unlock(&write_lock);
+
+      printf("Server got a connection from (%s, %d)\n", inet_ntoa(client_addr.sin_addr),ntohs(client_addr.sin_port));
+          
+      // buffer to read data into
+      char request[1024];
+      
+      // 5. recv: read incoming message (request) into buffer
+      int bytes_received = recv(fd,request,1024,0);
+      // null-terminate the string
+      request[bytes_received] = '\0';
+      // print it to standard out
+      printf("This is the incoming request:\n%s\n", request);
+
+      char reply[1024];
+      reply[0] = '\0';
+
+      // send message
+      strcat(reply, "HTTP/1.1 200 OK\nContent-Type: text/html\n\n<html><p>");
+      pthread_mutex_lock(&read_lock);
+        strcat(reply, http_message);
+      pthread_mutex_unlock(&read_lock);
+      strcat(reply, "</p></html>");
+
+      // 6. send: send the outgoing message (response) over the socket
+      // note that the second argument is a char*, and the third is the number of chars 
+      send(fd, reply, strlen(reply), 0);
+      
+      // 7. close: close the connection
+      // NOTE: if you don't do this, the page never loads
+      close(fd);
+      printf("Server closed connection\n");
+    }
+  }
 
   // 8. close: close the socket
   close(sock);
@@ -125,7 +181,9 @@ int start_server(int PORT_NUMBER, char* requests, char* chart, char* htmlpage)
   return 0;
 }
 
+// for the purpose of starting a new thread with read_usb
 void* run_read_usb(void* v) {
+
   read_usb(*(int*)v);
   return v;
 
@@ -134,24 +192,21 @@ void* run_read_usb(void* v) {
 int main(int argc, char *argv[])
 {
   // check the number of arguments
-  if (argc != 6) {
-      printf("\nUsage: %s [port_number] [file_path] [request.js] [chart.js] [html_filepath]\n", argv[0]);
+  if (argc != 3) {
+      printf("\nUsage: %s [port_number] [file_path]\n", argv[0]);
       exit(-1);
   }
 
+  memset(write_buffer, 0, BUFFER_SIZE);
+
   int port_number = atoi(argv[1]);
-  //get the port number, return if the port number is not greater than 1024
   if (port_number <= 1024) {
     printf("\nPlease specify a port number greater than 1024\n");
     exit(-1);
   }
 
-  int ret_val;
-  pthread_t t1;
-
-  //open the file
+  // open file
   int fd = open(argv[2], O_RDWR | O_NOCTTY | O_NDELAY);
-
   if (fd < 0) {
   perror("Could not open file\n");
   exit(1);
@@ -160,53 +215,13 @@ int main(int argc, char *argv[])
   printf("Successfully opened %s for reading and writing\n", argv[2]);
   }
 
+  configure(fd);
+
+  int ret_val;
+  pthread_t t1;
+
+  // TODO: check ret_val
   ret_val = pthread_create(&t1, NULL, &run_read_usb, &fd);
 
-
-  start_server(port_number, argv[3], argv[4], argv[5]);
+  run_server(port_number, fd);
 }
-
-
-
-    // reply[0] = '\0';
-    // strcat(reply, "HTTP/1.1 200 OK\nContent-Type: text/javascript\n\n");
-
-    // fp = fopen(requests, "rb");
-    // while( fgets (s, 100, fp)!=NULL ) {
-    //     puts(s);
-    //     pthread_mutex_lock(&lock);
-    //     strcat(reply, s);
-    //     pthread_mutex_unlock(&lock);
-    //  }
-    //  fclose(fp);
-
-    //  printf("PRINTING MESSAGE\n %s\n", reply);
-
-    //  send(fd, reply, strlen(reply), 0);
-
-    // reply[0] = '\0';
-    // strcat(reply, "HTTP/1.1 200 OK\nContent-Type: text/javascript\n\n");
-    // fp = fopen(chart,"rb");
-    // while( fgets (s, 100, fp)!=NULL ) {
-    //     puts(s);
-    //     pthread_mutex_lock(&lock);
-    //     strcat(reply, s);
-    //     pthread_mutex_unlock(&lock);
-    //  }
-    //  fclose(fp);
-
-    // //  printf("PRINTING MESSAGE\n %s\n", reply);
-
-    //  send(fd, reply, strlen(reply), 0);
-
-
-
-  // printf("PRINTING MESSAGE\n %s\n", reply);
-  //strcat(reply, html);
-
-  // strcat(reply, "HTTP/1.1 200 OK\nContent-Type: text/html\n\n<html><p>");
-  // pthread_mutex_lock(&lock);
-  //   strcat(reply, http_message);
-  // pthread_mutex_unlock(&lock);
-  // strcat(reply, "</p></html>");
-

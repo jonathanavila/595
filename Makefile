@@ -1,7 +1,7 @@
 CC = clang
 ARGS = -Wall
 
-all: read_usb server
+all: server
 
 read_usb:
 	$(CC) -c $(ARGS) read_usb.c

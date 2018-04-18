@@ -57,6 +57,10 @@ void setup()
   pinMode(GREEN, OUTPUT);  
   pinMode(BLUE, OUTPUT);   
   delay(500);          /* Allow system to stabilize */
+  // dummy
+  digitalWrite(RED, HIGH);
+  digitalWrite(GREEN, LOW);
+  digitalWrite(BLUE, LOW);
 } 
 
 /***************************************************************************
@@ -111,8 +115,25 @@ void loop()
     delay (250);
   }
   
+  char color[1];
+  
   while (1)
   {
+    
+    /* accept commands */
+    if(Serial.available() > 0) {
+      Serial.readBytes(color, 1);
+      if (color[0] == 'r') {
+        digitalWrite(RED, HIGH);
+        digitalWrite(BLUE, LOW);
+      }
+//      if (color[0] == 'g') digitalWrite(GREEN, HIGH);
+      if (color[0] == 'b') {
+        digitalWrite(BLUE, HIGH);
+        digitalWrite(RED, LOW);
+      }
+    }
+        
     Wire.requestFrom(THERM, 2);
     Temperature_H = Wire.read();
     Temperature_L = Wire.read();
@@ -125,7 +146,7 @@ void loop()
     SerialMonitorPrint (Temperature_H, Decimal, IsPositive);
     
     /* Update RGB LED.*/
-    UpdateRGB (Temperature_H);
+//    UpdateRGB (Temperature_H); // dummy 
     
     /* Display temperature on the 7-Segment */
     Dis_7SEG (Decimal, Temperature_H, Temperature_L, IsPositive);
