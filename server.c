@@ -68,6 +68,8 @@ int run_server(int PORT_NUMBER, int write_fd, char* htmlpage)
   // Initial GET, all HTML
   fd = accept(sock, (struct sockaddr *)&client_addr,(socklen_t *)&sin_size);
 
+  int bytes_received;
+
   // process request
   if (fd != -1) {
     printf("Server got a connection from (%s, %d)\n", inet_ntoa(client_addr.sin_addr),ntohs(client_addr.sin_port));
@@ -76,7 +78,7 @@ int run_server(int PORT_NUMBER, int write_fd, char* htmlpage)
     char request[1024];
 
     // 5. recv: read incoming message (request) into buffer
-    int bytes_received = recv(fd,request,1024,0);
+    bytes_received = recv(fd,request,1024,0);
     // null-terminate the string
     request[bytes_received] = '\0';
     // print it to standard out
@@ -120,14 +122,14 @@ int run_server(int PORT_NUMBER, int write_fd, char* htmlpage)
       printf("Server got a connection from (%s, %d)\n", inet_ntoa(client_addr.sin_addr),ntohs(client_addr.sin_port));
 
       // buffer to read data into
-      // char request[1024];
+      char request[1024];
 
       // // 5. recv: read incoming message (request) into buffer
-      // int bytes_received = recv(fd,request,1024,0);
-      // // null-terminate the string
-      // request[bytes_received] = '\0';
-      // // print it to standard out
-      // printf("This is the incoming request:\n%s\n", request);
+      bytes_received = recv(fd,request,1024,0);
+      // null-terminate the string
+      request[bytes_received] = '\0';
+      // print it to standard out
+      printf("This is the incoming request:\n%s\n", request);
       
       //   //TODO send AJAX data
       // dummy write
@@ -142,9 +144,6 @@ int run_server(int PORT_NUMBER, int write_fd, char* htmlpage)
 //       pthread_mutex_unlock(&write_lock);
 
       printf("Server got a connection from (%s, %d)\n", inet_ntoa(client_addr.sin_addr),ntohs(client_addr.sin_port));
-          
-      // buffer to read data into
-      char request[1024];
       
       // 5. recv: read incoming message (request) into buffer
       int bytes_received = recv(fd,request,1024,0);
@@ -157,11 +156,11 @@ int run_server(int PORT_NUMBER, int write_fd, char* htmlpage)
       reply[0] = '\0';
 
       // send message
-      strcat(reply, "HTTP/1.1 200 OK\nContent-Type: text/html\n\n<html><p>");
+      strcat(reply, "HTTP/1.1 200 OK\nContent-Type: text/json\n\n{\"temp\": \"");
       pthread_mutex_lock(&read_lock);
         strcat(reply, http_message);
       pthread_mutex_unlock(&read_lock);
-      strcat(reply, "</p></html>");
+      strcat(reply, "\"}");
 
       // 6. send: send the outgoing message (response) over the socket
       // note that the second argument is a char*, and the third is the number of chars 
