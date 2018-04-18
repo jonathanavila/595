@@ -18,7 +18,7 @@ http://www.binarii.com/files/papers/c_sockets.txt
 
 #include "read_usb.h"
 
-int run_server(int PORT_NUMBER, int write_fd)
+int run_server(int PORT_NUMBER, int write_fd, char* htmlpage)
 {
 
   // structs to represent the server and client
@@ -86,11 +86,11 @@ int run_server(int PORT_NUMBER, int write_fd)
     FILE *fp;
     char file_read_buffer[BUFFER_SIZE];
 
-    reply[0] = '\0';
+    html[0] = '\0';
     strcat(html, "HTTP/1.1 200 OK\nContent-Type: text/html\n\n");
     fp = fopen(htmlpage,"rb");
-    while( fgets (s, 100, fp)!=NULL ) {
-        strcat(html, s);
+    while( fgets (file_read_buffer, 100, fp)!=NULL ) {
+        strcat(html, file_read_buffer);
      }
     fclose(fp);
     strcat(html, "</p></html>");
@@ -120,16 +120,16 @@ int run_server(int PORT_NUMBER, int write_fd)
       printf("Server got a connection from (%s, %d)\n", inet_ntoa(client_addr.sin_addr),ntohs(client_addr.sin_port));
 
       // buffer to read data into
-      char request[1024];
+      // char request[1024];
 
-      // 5. recv: read incoming message (request) into buffer
-      int bytes_received = recv(fd,request,1024,0);
-      // null-terminate the string
-      request[bytes_received] = '\0';
-      // print it to standard out
-      printf("This is the incoming request:\n%s\n", request);
+      // // 5. recv: read incoming message (request) into buffer
+      // int bytes_received = recv(fd,request,1024,0);
+      // // null-terminate the string
+      // request[bytes_received] = '\0';
+      // // print it to standard out
+      // printf("This is the incoming request:\n%s\n", request);
       
-        //TODO send AJAX data
+      //   //TODO send AJAX data
       // dummy write
 //       pthread_mutex_lock(&write_lock);
 //         if (msg_temp == 0) {
@@ -192,8 +192,8 @@ void* run_read_usb(void* v) {
 int main(int argc, char *argv[])
 {
   // check the number of arguments
-  if (argc != 3) {
-      printf("\nUsage: %s [port_number] [file_path]\n", argv[0]);
+  if (argc != 4) {
+      printf("\nUsage: %s [port_number] [file_path] [html_path]\n", argv[0]);
       exit(-1);
   }
 
@@ -223,5 +223,5 @@ int main(int argc, char *argv[])
   // TODO: check ret_val
   ret_val = pthread_create(&t1, NULL, &run_read_usb, &fd);
 
-  run_server(port_number, fd);
+  run_server(port_number, fd, argv[3]);
 }
