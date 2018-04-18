@@ -62,32 +62,84 @@ int run_server(int PORT_NUMBER, int write_fd)
 
   // 4. accept
   int sin_size = sizeof(struct sockaddr_in);
+
   int fd = -1;
+  
+  // Initial GET, all HTML
+  fd = accept(sock, (struct sockaddr *)&client_addr,(socklen_t *)&sin_size);
 
-  // wait for arduino reboot
-  sleep(3);
+  // process request
+  if (fd != -1) {
+    printf("Server got a connection from (%s, %d)\n", inet_ntoa(client_addr.sin_addr),ntohs(client_addr.sin_port));
 
-  // dummy write
-  int msg_temp = 0;
+    // buffer to read data into
+    char request[1024];
 
+    // 5. recv: read incoming message (request) into buffer
+    int bytes_received = recv(fd,request,1024,0);
+    // null-terminate the string
+    request[bytes_received] = '\0';
+    // print it to standard out
+    printf("This is the incoming request:\n%s\n", request);
+
+    char html[10000];
+    FILE *fp;
+    char file_read_buffer[BUFFER_SIZE];
+
+    reply[0] = '\0';
+    strcat(html, "HTTP/1.1 200 OK\nContent-Type: text/html\n\n");
+    fp = fopen(htmlpage,"rb");
+    while( fgets (s, 100, fp)!=NULL ) {
+        strcat(html, s);
+     }
+    fclose(fp);
+    strcat(html, "</p></html>");
+
+    // 6. send: send the outgoing message (response) over the socket
+    // note that the second argument is a char*, and the third is the number of chars	
+    send(fd, html, strlen(html), 0);
+
+    // 7. close: close the connection
+    close(fd);
+    printf("Server closed connection\n");
+  } else {
+   printf("some critical error\n");
+    exit(1);
+  }
+  
+  // wait for Arduino to reboot
+  sleep(2);
+  
+  // Keep socket open, do Ajax stuff and communicate with client
   while (1) {
+      
+      fd = accept(sock, (struct sockaddr *)&client_addr,(socklen_t *)&sin_size);
 
-    // wait here until we get a connection on the port
-    fd = accept(sock, (struct sockaddr *)&client_addr,(socklen_t *)&sin_size);
+      // process request
+      if (fd != -1) {
+      printf("Server got a connection from (%s, %d)\n", inet_ntoa(client_addr.sin_addr),ntohs(client_addr.sin_port));
 
-    // process request
-    if (fd != -1) {
+      // buffer to read data into
+      char request[1024];
 
+      // 5. recv: read incoming message (request) into buffer
+      int bytes_received = recv(fd,request,1024,0);
+      // null-terminate the string
+      request[bytes_received] = '\0';
+      // print it to standard out
+      printf("This is the incoming request:\n%s\n", request);
+      
+        //TODO send AJAX data
       // dummy write
-      pthread_mutex_lock(&write_lock);
-        if (msg_temp == 0) {
-          write_buffer[0] = 'b';
-          msg_temp = 1;
-        } else {
-          write_buffer[0] = 'r';
-          msg_temp = 0;
-        }
-      pthread_mutex_unlock(&write_lock);
+//       pthread_mutex_lock(&write_lock);
+//         if (msg_temp == 0) {
+//           write_buffer[0] = 'b';
+//           msg_temp = 1;
+//         } else {
+//           write_buffer[0] = 'r';
+//           msg_temp = 0;
+//         }
+//       pthread_mutex_unlock(&write_lock);
 
       printf("Server got a connection from (%s, %d)\n", inet_ntoa(client_addr.sin_addr),ntohs(client_addr.sin_port));
           
@@ -173,4 +225,3 @@ int main(int argc, char *argv[])
 
   run_server(port_number, fd);
 }
-
