@@ -37,7 +37,7 @@ const byte NumberLookup[16] =   {0x3F,0x06,0x5B,0x4F,0x66,
 
 /* Function prototypes */
 void Cal_temp (int&, byte&, byte&, bool&);
-void Dis_7SEG (int, byte, byte, bool);
+void Dis_7SEG (int, byte, byte, bool, bool);
 void Send7SEG (byte, byte);
 void SerialMonitorPrint (byte, int, bool);
 void UpdateRGB (byte);
@@ -115,22 +115,63 @@ void loop()
     delay (250);
   }
   
-  char color[1];
-  
+  //char incoming[6];
+  bool current = true;
+  bool celsius = true;
+  String numStr;
+  int numInt;
+  String incoming;
   while (1)
   {
     
     /* accept commands */
     if(Serial.available() > 0) {
-      Serial.readBytes(color, 1);
-      if (color[0] == 'r') {
-        digitalWrite(RED, HIGH);
-        digitalWrite(BLUE, LOW);
+      incoming = "";
+      incoming = Serial.readString();
+      Serial.println("String: " + incoming);
+      //incoming = Serial.readString();
+      //incoming = "c28.8f";
+      
+      if (incoming[0] == 'h') {
+        MakeRed();
+        current = false;
       }
-//      if (color[0] == 'g') digitalWrite(GREEN, HIGH);
-      if (color[0] == 'b') {
-        digitalWrite(BLUE, HIGH);
-        digitalWrite(RED, LOW);
+      if (incoming[0] == 'a') {
+        MakeGreen();
+        current = false;
+      }
+      if (incoming[0] == 'l') {
+        MakeBlue();
+        current = false;
+      }
+      if (incoming[0] == 'c') {
+        MakeClear();
+        current = true;
+      }
+      if (incoming[0] == 'o') {
+        MakeClear();
+        //Wire.write(0x76);
+        current = false;
+        byte blank;
+        for(int i = 4; i >0; i--) { 
+          Send7SEG (i,0x00);
+        }  
+      }
+      
+      if (incoming[5] == 'f') {
+        celsius = false;
+      } else {
+        celsius = true;
+      }
+      String dec = incoming.substring(4,5);
+      String leadStr = incoming.substring(1,3);
+      Decimal = dec.toInt() * 1000;
+      Temperature_L = dec.toInt() * 1000;
+      int leadNum = leadStr.toInt();
+      
+      Temperature_H = leadNum;
+      if(current == false && incoming[0] != 'o') {
+        Dis_7SEG (Decimal, Temperature_H, Temperature_L, IsPositive, celsius);
       }
     }
         
@@ -140,16 +181,34 @@ void loop()
     
     /* Calculate temperature */
     Cal_temp (Decimal, Temperature_H, Temperature_L, IsPositive);
+
+    
     
     /* Display temperature on the serial monitor. 
        Comment out this line if you don't use serial monitor.*/
+   
     SerialMonitorPrint (Temperature_H, Decimal, IsPositive);
     
-    /* Update RGB LED.*/
-//    UpdateRGB (Temperature_H); // dummy 
+    if(current == true && celsius == false) { //display current temp in fahrenheit
+      
+      String digits = String(Temperature_H);
+      String full = digits + "." + Decimal;
+      float fl = full.toFloat();
+      fl = fl * 9/5 + 32;
+      full = String(fl);
+      String dec = full.substring(3,4);
+      String leadStr = full.substring(0,2);
+      Decimal = dec.toInt() * 1000;
+      Temperature_L = dec.toInt() * 1000;
+      int leadNum = leadStr.toInt();
+      Temperature_H = leadNum;
+      Dis_7SEG (Decimal, Temperature_H, Temperature_L, IsPositive, celsius);
+    }
     
     /* Display temperature on the 7-Segment */
-    Dis_7SEG (Decimal, Temperature_H, Temperature_L, IsPositive);
+    if(current == true) {
+      Dis_7SEG (Decimal, Temperature_H, Temperature_L, IsPositive, celsius);
+    }
     
     delay (1000);        /* Take temperature read every 1 second */
   }
@@ -187,7 +246,7 @@ void Cal_temp (int& Decimal, byte& High, byte& Low, bool& sign)
  Purpose: 
    Display number on the 7-segment display.
 ****************************************************************************/
-void Dis_7SEG (int Decimal, byte High, byte Low, bool sign)
+void Dis_7SEG (int Decimal, byte High, byte Low, bool sign, bool cels)
 {
   byte Digit = 4;                 /* Number of 7-Segment digit */
   byte Number;                    /* Temporary variable hold the number to display */
@@ -232,7 +291,11 @@ void Dis_7SEG (int Decimal, byte High, byte Low, bool sign)
 
   if (Digit > 0)                 /* Display "c" if there is more space on 7-SEG */
   {
-    Send7SEG (Digit,0x58);
+    if(cels == true) {
+      Send7SEG (Digit,0x58);
+    } else {
+      Send7SEG (Digit,0x71);
+    }
     Digit--;
   }
   
@@ -282,6 +345,37 @@ void UpdateRGB (byte Temperature_H)
   {
     digitalWrite(GREEN, HIGH);
   }
+}
+
+void MakeRed ()
+{
+  digitalWrite(RED, LOW);
+  digitalWrite(GREEN, LOW);
+  digitalWrite(BLUE, LOW);        /* Turn off all LEDs. */
+  digitalWrite(RED, HIGH);
+}
+
+void MakeGreen ()
+{
+  digitalWrite(RED, LOW);
+  digitalWrite(GREEN, LOW);
+  digitalWrite(BLUE, LOW);        /* Turn off all LEDs. */
+  digitalWrite(GREEN, HIGH);
+}
+
+void MakeBlue ()
+{
+  digitalWrite(RED, LOW);
+  digitalWrite(GREEN, LOW);
+  digitalWrite(BLUE, LOW);        /* Turn off all LEDs. */
+  digitalWrite(BLUE, HIGH);
+}
+
+void MakeClear ()
+{
+  digitalWrite(RED, LOW);
+  digitalWrite(GREEN, LOW);
+  digitalWrite(BLUE, LOW);        /* Turn off all LEDs. */
 }
 
 /***************************************************************************
