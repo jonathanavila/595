@@ -154,7 +154,7 @@ void loop()
         current = false;
         byte blank;
         for(int i = 4; i >0; i--) { 
-          Send7SEG (i,NumberLookup[blank]);
+          Send7SEG (i,0x00);
         }  
       }
       
