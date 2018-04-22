@@ -125,60 +125,11 @@ int run_server(int server_port, char* html_file_path)
   // Keep socket open, do Ajax stuff and communicate with client
   while (1) {
       
-      fd = accept(sock, (struct sockaddr *)&client_addr,(socklen_t *)&sin_size);
+    fd = accept(sock, (struct sockaddr *)&client_addr,(socklen_t *)&sin_size);
 
-      // process request
-      if (fd != -1) {
-<<<<<<< HEAD
-        printf("Server got a connection from (%s, %d)\n", inet_ntoa(client_addr.sin_addr),ntohs(client_addr.sin_port));
-
-        // buffer to read data into
-        char request[1024];
-
-        // // 5. recv: read incoming message (request) into buffer
-        bytes_received = recv(fd,request,1024,0);
-        // null-terminate the string
-        request[bytes_received] = '\0';
-        // print it to standard out
-        printf("This is the incoming request:\n%s\n", request);
-        
-        // TODO send AJAX data
-        // dummy write
-  //       pthread_mutex_lock(&write_lock);
-  //         if (msg_temp == 0) {
-  //           write_buffer[0] = 'b';
-  //           msg_temp = 1;
-  //         } else {
-  //           write_buffer[0] = 'r';
-  //           msg_temp = 0;
-  //         }
-  //       pthread_mutex_unlock(&write_lock);
-
-        char reply[1024];
-        reply[0] = '\0';
-
-        // TODO: process incoming request, make appropriate response
-
-        // send message
-        strcat(reply, "HTTP/1.1 200 OK\nContent-Type: text/json\n\n{\"temp\": \"");
-        pthread_mutex_lock(&read_lock);
-          strcat(reply, http_message);
-        pthread_mutex_unlock(&read_lock);
-        strcat(reply, "\"}");
-
-        // 6. send: send the outgoing message (response) over the socket
-        // note that the second argument is a char*, and the third is the number of chars 
-        send(fd, reply, strlen(reply), 0);
-        
-        // 7. close: close the connection
-        // NOTE: if you don't do this, the page never loads
-        close(fd);
-        printf("Server closed connection\n");
-=======
+    // process request
+    if (fd != -1) {
       printf("Server got a connection from (%s, %d)\n", inet_ntoa(client_addr.sin_addr),ntohs(client_addr.sin_port));
-
-      //send actual + computed high medium and low value 
-      //need to 
 
       // buffer to read data into
       char request[1024];
@@ -190,7 +141,7 @@ int run_server(int server_port, char* html_file_path)
       // print it to standard out
       printf("This is the incoming request:\n%s\n", request);
       
-      //   //TODO send AJAX data
+      // TODO send AJAX data
       // dummy write
 //       pthread_mutex_lock(&write_lock);
 //         if (msg_temp == 0) {
@@ -202,17 +153,10 @@ int run_server(int server_port, char* html_file_path)
 //         }
 //       pthread_mutex_unlock(&write_lock);
 
-      printf("Server got a connection from (%s, %d)\n", inet_ntoa(client_addr.sin_addr),ntohs(client_addr.sin_port));
-      
-      // 5. recv: read incoming message (request) into buffer
-      int bytes_received = recv(fd,request,1024,0);
-      // null-terminate the string
-      request[bytes_received] = '\0';
-      // print it to standard out
-      printf("This is the incoming request:\n%s\n", request);
-
       char reply[1024];
       reply[0] = '\0';
+
+      // TODO: process incoming request, make appropriate response
 
       // send message
       strcat(reply, "HTTP/1.1 200 OK\nContent-Type: text/json\n\n{\"temp\": \"");
@@ -229,7 +173,6 @@ int run_server(int server_port, char* html_file_path)
       // NOTE: if you don't do this, the page never loads
       close(fd);
       printf("Server closed connection\n");
->>>>>>> master
     }
   }
 
