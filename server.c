@@ -121,6 +121,9 @@ int run_server(int PORT_NUMBER, int write_fd, char* htmlpage)
       if (fd != -1) {
       printf("Server got a connection from (%s, %d)\n", inet_ntoa(client_addr.sin_addr),ntohs(client_addr.sin_port));
 
+      //send actual + computed high medium and low value 
+      //need to 
+
       // buffer to read data into
       char request[1024];
 
