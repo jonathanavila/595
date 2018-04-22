@@ -1,23 +1,192 @@
-<html>
 <!DOCTYPE html>
-<meta charset="utf-8">
+<html lang="en">
 <head>
-<script src="https://code.jquery.com/jquery.js"></script>
-<script src="https://d3js.org/d3.v4.min.js"></script>
 
+  <meta charset="utf-8">
+
+  <script src="https://code.jquery.com/jquery.js"></script>
+  <script src="https://d3js.org/d3.v4.min.js"></script>
+
+  <style>
+  button {
+    font-size: 100%;
+    width: 160px;
+    }
+
+    .line {
+      fill: none;
+      stroke: steelblue;
+      stroke-width: 2px;
+    }
+
+    body {
+      background-color: #93B874;
+    }
+
+    .division{
+      float: left;
+      padding-right:30px;
+    }
+
+    input {
+    font-size: 14px;
+    height: 40px;
+    text-align: right;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="leftSide" class = "division">
+    <div>
+      <h1> 595 PROJECT: GROUP 15</h1> 
+      <h2>Jonathan Avila, Erik Marks, Carson Stack</h2>
+    </div>
+    <h3>Pick a time period to view data from: </h3> 
+      <td>
+        <select
+          class="timeFrame"
+          selected="10">
+             <option value='10'>10 seconds</option>
+             <option value='30'>30 seconds</option>
+             <option value='60'>1 minute</option>
+            <option value='120'>2 minutes</option>
+        </select></td> 
+
+    <div>
+      <h3>Press to turn signal on or off</h3>
+      <button id="buttonOnOff" value="OnOff" type="button"
+               class="onoff">OnOff</button>
+    </div>  
+    <div>
+      <h3>Press to turn view temperature in Fahrenheit or Celsius</h3>
+      <button id="buttonT" type = "button"
+             class="Temperature">Temperature</button>
+      <input id='Temp' name='Temp' value = 'Celsius' disabled></input>
+    </div>
+    <div>
+      <h3>Select and view the current: high, low, average or actual temperature</h3>
+      <td>
+        <select 
+       class="stat"
+       selected="Actual">
+             <option value='Actual'>Actual</option>
+             <option value='Average'>Average</option>
+             <option value='High'>High</option>
+             <option value='Low'>Low</option>
+        </select></td> 
+      <td colspan='4'><input id='display' name='display' disabled></input></td>
+    </div>
+  </div>  
+  <div id = "rightSide" class = "division">
+    <p id="chart"></p>
+  </div>
+
+</body>
+
+<!-- chart.js -->
 <script type="text/javascript">
-    
-var lastStatType = "Actual"
+
+var display = null; 
+var temps = [];
+
+var y0 = 0
+var x0 = -1
+
+var height = 320;
+var width = 520;
+
+var svg = d3.select("#chart").append("svg").attr("width", width + 30).attr("height", height + 30);
+
+
+var interChart = setInterval(function() {
+    updateChart();
+  }, 1000);
+
+
+var interData = setInterval(function() {
+        updateData();
+}, 1000);
+
+function updateData() {
+    x0++;
+    $.ajax({
+        type: "GET",
+        url: "localhost:3001/lastTemp"
+    });
+    y0 = 30 + 10*Math.random();
+    temps.push({"x": x0, "y": y0});
+
+    $.ajax({
+        type: "POST",
+        url: "/temp?"+lastStatType+","+convertTempAppended()
+    });
+}
+
+
+function updateChart() {     
+  minimum = 0 
+  if (temps.length - 1 - Number(lastTimeFrame) >= 0) {
+      minimum = temps.length - Number(lastTimeFrame);
+  }
+  maximum = temps.length - 1; 
+  if (temps.length <= Number(lastTimeFrame)){
+      maximum = Number(lastTimeFrame);
+  }
+
+
+  var x = d3.scaleLinear().domain([minimum, maximum]).range([0, width]);
+  var y = d3.scaleLinear().domain([0, convertTemperature(50)]).range([height, 0]);
+
+
+  var xAxis = d3.axisBottom().scale(x).ticks(5);
+  var yAxis = d3.axisRight().scale(y).ticks(10);
+
+
+
+
+  var line = d3.line()
+     .x(function(d) { return x(d.x); })
+     .y(function(d) { return y(convertTemperature(d.y)); });
+
+  d3.selectAll("svg > *").remove();
+
+
+  var graph = svg.append("path").attr("d", line(getSubArray())).attr("stroke", "blue")
+                            .attr("stroke-width", 1)
+                            .attr("fill", "none");
+
+  svg.append("g")
+      .attr("class", "y axis")
+      .attr("transform", "translate(0, 0 )")
+      .call(yAxis)
+
+  svg.append("g")
+      .attr("class", "x axis")
+      .attr("transform", "translate(0," + height + ")")
+      .call(xAxis);   
+
+
+
+  getStat();            
+}
+</script>
+
+<!-- requests.js -->
+<script type="text/javascript">
+  
+var lastStatType = "C"
 var lastTimeFrame = "10"
 var onOff = "On"
 var lastTemperatureType = "Celsius"
+var lastTemp;
 
 $(document).ready(function() {
 
   $('button').on('click', function() {
     var buttonPressed = $(this);
     if (buttonPressed.attr("class") == "Temperature") {
-      console.log("Sending GET localhost:3001/ color")
+      console.log("Sending GET localhost:3001/color")
       if  (lastTemperatureType == "Celsius") {
         lastTemperatureType = "Fahrenheit"
       } else {
@@ -32,7 +201,24 @@ $(document).ready(function() {
       getStat();
 
     } else if (buttonPressed.attr("class") == "onoff") {
-      console.log(temps[0])
+      if (onOff == "On") {
+        onOff = "Off"
+        clearInterval(interChart);
+        document.getElementById("display").value = "";
+        $.ajax({
+          type: "GET",
+          url: "localhost:3001/off"
+        });
+      } else {
+        onOff = "On"
+        getStat();
+        interChart = setInterval(function() {
+          updateChart();}, 1000);
+        }
+        $.ajax({
+          type: "GET",
+          url: "localhost:3001/on"
+        });
     }
     updateData();
   })
@@ -58,13 +244,13 @@ $(document).ready(function() {
 });
 
 getStat = function() {
-  if (lastStatType == "High") {
+  if (lastStatType == "H") {
     getHigh();
   }
-  else if (lastStatType == "Low") {
+  else if (lastStatType == "L") {
     getLow();
   }
-  else if (lastStatType == "Average") {
+  else if (lastStatType == "A") {
     getAverage();
   }
   else {
@@ -88,8 +274,6 @@ getAverage = function() {
   }
   avg = sum / num
   document.getElementById("display").value = convertTemperature(avg);
-
-
   
 }
 getActual = function() {
@@ -137,8 +321,23 @@ getLow = function() {
 }
 
 convertTemperature = function(val) {
-  if (lastTemperatureType == "Celsius") return val;
-  else return 32 + (9*val)/5;
+  if (lastTemperatureType == "Celsius") {
+    lastTemp = val;
+    return val;
+  }
+  else {
+    lastTemp = 32 + (9*val)/5;
+    return lastTemp;
+  }
+}
+
+convertTempAppended = function() {
+  if (lastTemperatureType == "Celsius") {
+    return lastTemp.toFixed(1)+"C";
+  }
+  else {
+    return lastTemp.toFixed(1)+"F";
+  } 
 }
 
 
@@ -153,166 +352,4 @@ getSubArray = function() {
 }
 </script>
 
-
-<style>
-button {
-font-size: 100%;
-width: 160px;
-}
-
-
-
-.line {
-  fill: none;
-  stroke: steelblue;
-  stroke-width: 2px;
-}
-
-body {
-  background-color: #93B874;
-}
-
-.division{
-  float: left;
-  padding-right:30px;
-}
-
-input {
-font-size: 14px;
-height: 40px;
-text-align: right;
-}
-
-</style>
-</head>
-<body>
-  <div id="leftSide" class = "division">
-    <div>
-      <h1> 595 PROJECT: GROUP 15</h1> 
-      <h2>Jonathan Avila, Erik Marks, Carson Stack</h2>
-    </div>
-    <h3>Pick a time period to view data from: </h3> 
-      <td>
-        <select
-          class="timeFrame"
-          selected="10">
-             <option value='10'>10 seconds</option>
-             <option value='30'>30 seconds</option>
-             <option value='60'>1 minute</option>
-            <option value='120'>2 minutes</option>
-        </select></td> 
-
-    <div>
-      <h3>Press to turn signal on or off</h3>
-      <button id="buttonOnOff" value="OnOff" type="button"
-               class="onoff">OnOff</button>
-    </div>  
-    <div>
-      <h3>Press to turn view temperature in Fahrenheit or Celsius</h3>
-      <button id="buttonT" type = "button"
-             class="Temperature">Temperature</button>
-      <input id='Temp' name='Temp' value = 'Celsius' disabled></input>
-    </div>
-    <div>
-      <h3>Select and view the current: high, low, average or actual temperature</h3>
-      <td>
-        <select 
-       class="stat"
-       selected="Actual">
-             <option value='Actual'>Actual</option>
-             <option value='Average'>Average</option>
-             <option value='High'>High</option>
-             <option value='Low'>Low</option>
-        </select></td> 
-      <td colspan='4'><input id='display' name='display' disabled></input></td>
-    </div>
-  </div>  
-     <div id = "rightSide" class = "division">
-      <p id="chart"></p>
-      
-</body>
-
-<script type="text/javascript">
-  /*
- * Implement all your JavaScript in this file!
- */
-
- var display = null; 
-var temps = [];
-
-var y0 = 0
-var x0 = -1
-
-var height = 320;
-var width = 520;
-
-var svg = d3.select("#chart").append("svg").attr("width", width + 30).attr("height", height + 30);
-
-
-var inter = setInterval(function() {
-    updateData();
-  }, 1000);
-
-
-
-function updateData() {
-  x0++;
-  y0 = 30 + 10*Math.random();
-  temps.push({"x": x0, "y": y0});
-     
-    minimum = 0 
-    if (temps.length - 1 - Number(lastTimeFrame) >= 0) {
-        minimum = temps.length - Number(lastTimeFrame);
-    }
-    maximum = temps.length - 1; 
-    if (temps.length <= Number(lastTimeFrame)){
-        maximum = Number(lastTimeFrame);
-    }
-
-
-    var x = d3.scaleLinear().domain([minimum, maximum]).range([0, width]);
-  var y = d3.scaleLinear().domain([0, convertTemperature(50)]).range([height, 0]);
-
-
-  var xAxis = d3.axisBottom().scale(x).ticks(5);
-    var yAxis = d3.axisRight().scale(y).ticks(10);
-
-
-
-
-  var line = d3.line()
-     .x(function(d) { return x(d.x); })
-     .y(function(d) { return y(convertTemperature(d.y)); });
-
-    d3.selectAll("svg > *").remove();
-
-
-  var graph = svg.append("path").attr("d", line(getSubArray())).attr("stroke", "blue")
-                            .attr("stroke-width", 1)
-                            .attr("fill", "none");
-
-    svg.append("g")
-        .attr("class", "y axis")
-        .attr("transform", "translate(0, 0 )")
-        .call(yAxis)
-
-    svg.append("g")
-        .attr("class", "x axis")
-        .attr("transform", "translate(0," + height + ")")
-        .call(xAxis);   
-
-
-
-    getStat();
-                
-}
-</script>
-  </div>
-
-
-
-
-
-
 </html>
-

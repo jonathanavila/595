@@ -91,7 +91,8 @@ int read_usb(int fd) {
           // reinitialize http_buffer
           memset(http_buffer, 0, BUFFER_SIZE);
 
-          printf("http_message: %s\n", http_message);
+          // TESTING: print http_message
+          // printf("http_message: %s\n", http_message);
 
           break;
         }

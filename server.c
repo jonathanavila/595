@@ -18,7 +18,8 @@ http://www.binarii.com/files/papers/c_sockets.txt
 
 #include "read_usb.h"
 
-int run_server(int PORT_NUMBER, int write_fd, char* htmlpage)
+// int run_server(int server_port, int write_fd, char* html_file_path)
+int run_server(int server_port, char* html_file_path)
 {
 
   // structs to represent the server and client
@@ -39,7 +40,7 @@ int run_server(int PORT_NUMBER, int write_fd, char* htmlpage)
   }
 
   // configure the server
-  server_addr.sin_port = htons(PORT_NUMBER); // specify port number
+  server_addr.sin_port = htons(server_port); // specify port number
   server_addr.sin_family = AF_INET;         
   server_addr.sin_addr.s_addr = INADDR_ANY; 
   bzero(&(server_addr.sin_zero),8); 
@@ -57,7 +58,7 @@ int run_server(int PORT_NUMBER, int write_fd, char* htmlpage)
   }
       
   // once you get here, the server is set up and about to start listening
-  printf("\nServer configured to listen on port %d\n", PORT_NUMBER);
+  printf("\nServer configured to listen on port %d\n", server_port);
   fflush(stdout);
 
   // 4. accept
@@ -84,18 +85,26 @@ int run_server(int PORT_NUMBER, int write_fd, char* htmlpage)
     // print it to standard out
     printf("This is the incoming request:\n%s\n", request);
 
+    // read in html page
     char html[10000];
     FILE *fp;
     char file_read_buffer[BUFFER_SIZE];
 
     html[0] = '\0';
+    file_read_buffer[0] = '\0';
+
     strcat(html, "HTTP/1.1 200 OK\nContent-Type: text/html\n\n");
-    fp = fopen(htmlpage,"rb");
-    while( fgets (file_read_buffer, 100, fp)!=NULL ) {
+
+    fp = fopen(html_file_path,"rb");
+    if (fp == NULL) {
+      perror("Read HTML file");
+      exit(1);
+    }
+    while( fgets(file_read_buffer, BUFFER_SIZE - 1, fp) != NULL ) {
         strcat(html, file_read_buffer);
-     }
+        file_read_buffer[0] = '\0';
+    }
     fclose(fp);
-    strcat(html, "</p></html>");
 
     // 6. send: send the outgoing message (response) over the socket
     // note that the second argument is a char*, and the third is the number of chars	
@@ -104,13 +113,14 @@ int run_server(int PORT_NUMBER, int write_fd, char* htmlpage)
     // 7. close: close the connection
     close(fd);
     printf("Server closed connection\n");
+
   } else {
-   printf("some critical error\n");
+    perror("accept connection");
     exit(1);
   }
   
   // wait for Arduino to reboot
-  sleep(2);
+  sleep(3);
   
   // Keep socket open, do Ajax stuff and communicate with client
   while (1) {
@@ -119,57 +129,50 @@ int run_server(int PORT_NUMBER, int write_fd, char* htmlpage)
 
       // process request
       if (fd != -1) {
-      printf("Server got a connection from (%s, %d)\n", inet_ntoa(client_addr.sin_addr),ntohs(client_addr.sin_port));
+        printf("Server got a connection from (%s, %d)\n", inet_ntoa(client_addr.sin_addr),ntohs(client_addr.sin_port));
 
-      // buffer to read data into
-      char request[1024];
+        // buffer to read data into
+        char request[1024];
 
-      // // 5. recv: read incoming message (request) into buffer
-      bytes_received = recv(fd,request,1024,0);
-      // null-terminate the string
-      request[bytes_received] = '\0';
-      // print it to standard out
-      printf("This is the incoming request:\n%s\n", request);
-      
-      //   //TODO send AJAX data
-      // dummy write
-//       pthread_mutex_lock(&write_lock);
-//         if (msg_temp == 0) {
-//           write_buffer[0] = 'b';
-//           msg_temp = 1;
-//         } else {
-//           write_buffer[0] = 'r';
-//           msg_temp = 0;
-//         }
-//       pthread_mutex_unlock(&write_lock);
+        // // 5. recv: read incoming message (request) into buffer
+        bytes_received = recv(fd,request,1024,0);
+        // null-terminate the string
+        request[bytes_received] = '\0';
+        // print it to standard out
+        printf("This is the incoming request:\n%s\n", request);
+        
+        // TODO send AJAX data
+        // dummy write
+  //       pthread_mutex_lock(&write_lock);
+  //         if (msg_temp == 0) {
+  //           write_buffer[0] = 'b';
+  //           msg_temp = 1;
+  //         } else {
+  //           write_buffer[0] = 'r';
+  //           msg_temp = 0;
+  //         }
+  //       pthread_mutex_unlock(&write_lock);
 
-      printf("Server got a connection from (%s, %d)\n", inet_ntoa(client_addr.sin_addr),ntohs(client_addr.sin_port));
-      
-      // 5. recv: read incoming message (request) into buffer
-      int bytes_received = recv(fd,request,1024,0);
-      // null-terminate the string
-      request[bytes_received] = '\0';
-      // print it to standard out
-      printf("This is the incoming request:\n%s\n", request);
+        char reply[1024];
+        reply[0] = '\0';
 
-      char reply[1024];
-      reply[0] = '\0';
+        // TODO: process incoming request, make appropriate response
 
-      // send message
-      strcat(reply, "HTTP/1.1 200 OK\nContent-Type: text/json\n\n{\"temp\": \"");
-      pthread_mutex_lock(&read_lock);
-        strcat(reply, http_message);
-      pthread_mutex_unlock(&read_lock);
-      strcat(reply, "\"}");
+        // send message
+        strcat(reply, "HTTP/1.1 200 OK\nContent-Type: text/json\n\n{\"temp\": \"");
+        pthread_mutex_lock(&read_lock);
+          strcat(reply, http_message);
+        pthread_mutex_unlock(&read_lock);
+        strcat(reply, "\"}");
 
-      // 6. send: send the outgoing message (response) over the socket
-      // note that the second argument is a char*, and the third is the number of chars 
-      send(fd, reply, strlen(reply), 0);
-      
-      // 7. close: close the connection
-      // NOTE: if you don't do this, the page never loads
-      close(fd);
-      printf("Server closed connection\n");
+        // 6. send: send the outgoing message (response) over the socket
+        // note that the second argument is a char*, and the third is the number of chars 
+        send(fd, reply, strlen(reply), 0);
+        
+        // 7. close: close the connection
+        // NOTE: if you don't do this, the page never loads
+        close(fd);
+        printf("Server closed connection\n");
     }
   }
 
@@ -188,11 +191,18 @@ void* run_read_usb(void* v) {
 
 }
 
+// for the purpose of starting a new thread for client communication
+void* run_handle_client(void* v) {
+
+  // TODO
+  return v;
+}
+
 int main(int argc, char *argv[])
 {
   // check the number of arguments
   if (argc != 4) {
-      printf("\nUsage: %s [port_number] [file_path] [html_path]\n", argv[0]);
+      printf("\nUsage: %s [port_number] [usb_file_path] [html_file_path]\n", argv[0]);
       exit(-1);
   }
 
@@ -222,5 +232,6 @@ int main(int argc, char *argv[])
   // TODO: check ret_val
   ret_val = pthread_create(&t1, NULL, &run_read_usb, &fd);
 
-  run_server(port_number, fd, argv[3]);
+  // run_server(port_number, fd, argv[3]);
+  run_server(port_number, argv[3]);
 }
