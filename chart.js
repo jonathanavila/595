@@ -15,9 +15,6 @@ var width = 520;
 var svg = d3.select("#chart").append("svg").attr("width", width + 30).attr("height", height + 30);
 
 
-
-
-
 var interData = setInterval(function() {
         updateData();
 }, 1000);
@@ -30,9 +27,16 @@ var interChart = setInterval(function() {
 
 function updateData() {
     x0++;
+    var req;
+
+    if (onOff == "On") {
+        req = current_url + "temp?"+lastStatType+convertTempAppended()
+    } else {
+        req = current_url + "temp?"+"o"+convertTempAppended()
+    }
     $.ajax({     
         type: "POST",
-        url: "http://localhost:3001/temp?"+lastStatType+","+convertTempAppended(),
+        url: req,
         success: function (data) {
             console.log(y0);   
             y0 = data;
