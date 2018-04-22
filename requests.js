@@ -1,29 +1,26 @@
-	
 var lastStatType = "C"
 var lastTimeFrame = "10"
 var onOff = "On"
 var lastTemperatureType = "Celsius"
-var lastTemp;
+var lastTemp = 23;
+var recieving = true;
+
 
 $(document).ready(function() {
+
+	document.getElementById("recieving").value = "Recieving";
 
 	$('button').on('click', function() {
 		var buttonPressed = $(this);
 		if (buttonPressed.attr("class") == "Temperature") {
-			console.log("Sending GET localhost:3001/color")
 			if  (lastTemperatureType == "Celsius") {
 				lastTemperatureType = "Fahrenheit"
 			} else {
 				lastTemperatureType = "Celsius"
 
 			}
-			$.ajax({
-				type: "GET",
-				url: "localhost:3001/color"
-			});
 			document.getElementById("Temp").value = lastTemperatureType;
 			getStat();
-
 		} else if (buttonPressed.attr("class") == "onoff") {
 			if (onOff == "On") {
 				onOff = "Off"
@@ -31,7 +28,7 @@ $(document).ready(function() {
 				document.getElementById("display").value = "";
 				$.ajax({
 					type: "GET",
-					url: "localhost:3001/off"
+					url: "http://localhost:3001/off"
 				});
 			} else {
 				onOff = "On"
@@ -41,7 +38,7 @@ $(document).ready(function() {
 				}
 				$.ajax({
 					type: "GET",
-					url: "localhost:3001/on"
+					url: "http://localhost:3001/on"
 				});
 		}
 		updateData();
@@ -100,12 +97,15 @@ getAverage = function() {
 	document.getElementById("display").value = convertTemperature(avg);
 	
 }
+
+//get the actual temperature for the given time length
 getActual = function() {
 	document.getElementById("display").value = 
 		convertTemperature(temps[temps.length-1].y)
 
 }
 
+////get the high temperature for the given time length
 getHigh = function() {
 	var num = Number(lastTimeFrame)
 	var max = 0
@@ -125,6 +125,7 @@ getHigh = function() {
 	document.getElementById("display").value = convertTemperature(max);
 
 }
+//get the low temperature for the given time length
 getLow = function() {
 	num = Number(lastTimeFrame)
 	var min = Number.POSITIVE_INFINITY
@@ -144,6 +145,7 @@ getLow = function() {
 	document.getElementById("display").value = convertTemperature(min);
 }
 
+//converts the temperature 
 convertTemperature = function(val) {
 	if (lastTemperatureType == "Celsius") {
 		lastTemp = val;
@@ -155,6 +157,7 @@ convertTemperature = function(val) {
 	}
 }
 
+//gives you temperature value 
 convertTempAppended = function() {
 	if (lastTemperatureType == "Celsius") {
 		return lastTemp.toFixed(1)+"C";
@@ -164,7 +167,8 @@ convertTempAppended = function() {
 	} 
 }
 
-
+//gives you a sub-array of a given time length
+//each element in the array is a reading for a second
 getSubArray = function() {
 	if (temps.length <= Number(lastTimeFrame)) {
 		return temps;

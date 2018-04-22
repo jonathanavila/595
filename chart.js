@@ -8,10 +8,19 @@ var temps = [];
 var y0 = 0
 var x0 = -1
 
+
 var height = 320;
 var width = 520;
 
 var svg = d3.select("#chart").append("svg").attr("width", width + 30).attr("height", height + 30);
+
+
+
+
+
+var interData = setInterval(function() {
+        updateData();
+}, 1000);
 
 
 var interChart = setInterval(function() {
@@ -19,30 +28,38 @@ var interChart = setInterval(function() {
 	}, 1000);
 
 
-var interData = setInterval(function() {
-        updateData();
-}, 1000);
-
 function updateData() {
     x0++;
-    $.ajax({
-        type: "GET",
-        url: "localhost:3001/lastTemp"
-    });
-    y0 = 30 + 10*Math.random();
-    temps.push({"x": x0, "y": y0});
-
-    $.ajax({
+    $.ajax({     
         type: "POST",
-        url: "/temp?"+lastStatType+","+convertTempAppended()
+        url: "http://localhost:3001/temp?"+lastStatType+","+convertTempAppended(),
+        success: function (data) {
+            console.log(y0);   
+            y0 = data;
+        },
     });
+    if (y0 == -1) {
+        if (recieving) {
+            recieving = false;
+            document.getElementById("recieving").value = "Not recieving";
+
+        }
+    } else {
+        if (recieving = false) {
+            recieving = true;
+            document.getElementById("recieving").value = "Recieving";
+
+        }
+        y0 = 30 + 10*Math.random();
+        temps.push({"x": x0, "y": y0});
+    }
 }
 
 
 function updateChart() {     
     minimum = 0 
-    if (temps.length - 1 - Number(lastTimeFrame) >= 0) {
-        minimum = temps.length - Number(lastTimeFrame);
+    if (temps.length - 1 - Number(lastTimeFrame) > 0) {
+        minimum = temps.length - Number(lastTimeFrame) - 1 ;
     }
     maximum = temps.length - 1; 
     if (temps.length <= Number(lastTimeFrame)){
@@ -80,8 +97,6 @@ function updateChart() {
         .attr("class", "x axis")
         .attr("transform", "translate(0," + height + ")")
         .call(xAxis);   
-
-
 
     getStat();            
 }
