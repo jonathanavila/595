@@ -58,7 +58,7 @@ void setup()
   pinMode(BLUE, OUTPUT);   
   delay(500);          /* Allow system to stabilize */
   // dummy
-  digitalWrite(RED, HIGH);
+  digitalWrite(RED, LOW);
   digitalWrite(GREEN, LOW);
   digitalWrite(BLUE, LOW);
 } 
