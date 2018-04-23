@@ -41,7 +41,6 @@ int read_usb(char* file_name) {
   configure(fd);
 
   // memset buffers and http_message
-  memset(read_buffer, 0, BUFFER_SIZE);
   memset(http_buffer, 0, BUFFER_SIZE);
   memset(http_message, 0, BUFFER_SIZE);
 
@@ -49,6 +48,8 @@ int read_usb(char* file_name) {
 
   // attempt to read indefinitely
   while (1) {
+
+    memset(read_buffer, 0, BUFFER_SIZE);
 
     if (failed_reads >= FAILED_READ_LIMIT) {
       sleep(3);
@@ -62,8 +63,8 @@ int read_usb(char* file_name) {
 
       if (failed_reads < FAILED_READ_LIMIT && write_buffer[0] != '\0') {
 
-        int bytes_written = write(fd, &write_buffer[0], sizeof(char) * 6);
-        if (bytes_written < 6) {
+        int bytes_written = write(fd, &write_buffer[0], sizeof(char) * 7);
+        if (bytes_written < 7) {
           perror("Write usb");
           exit(1);
         }
