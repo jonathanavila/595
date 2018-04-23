@@ -12,13 +12,16 @@
 #include <unistd.h>
 #include <string.h>
 
-#define BUFFER_SIZE   101
+#define BUFFER_SIZE         101
+#define FAILED_READ_LIMIT   25000000
+#define READ_FAILURE_FLAG   "9999.9"
 
 // buffers & message
-char read_buffer[BUFFER_SIZE], http_buffer[BUFFER_SIZE], http_message[BUFFER_SIZE], write_buffer[BUFFER_SIZE];
+char    read_buffer[BUFFER_SIZE], http_buffer[BUFFER_SIZE], http_message[BUFFER_SIZE], 
+        write_buffer[BUFFER_SIZE], request_buffer[BUFFER_SIZE];
 
 pthread_mutex_t read_lock, write_lock;
 
-void configure(int fd);
-int read_usb(int fd);
+void configure(int);
+int read_usb(char*);
 int write_usb(int, char*);
