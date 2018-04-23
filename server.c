@@ -18,8 +18,11 @@ http://www.binarii.com/files/papers/c_sockets.txt
 
 #include "read_usb.h"
 
-// int run_server(int server_port, int write_fd, char* html_file_path)
-int run_server(int server_port, char* html_file_path)
+int port_number = 0;
+char* html_file_path = NULL;
+
+// int run_server(int port_number, char* html_file_path)
+int run_server()
 {
 
   // structs to represent the server and client
@@ -40,7 +43,7 @@ int run_server(int server_port, char* html_file_path)
   }
 
   // configure the server
-  server_addr.sin_port = htons(server_port); // specify port number
+  server_addr.sin_port = htons(port_number); // specify port number
   server_addr.sin_family = AF_INET;         
   server_addr.sin_addr.s_addr = INADDR_ANY; 
   bzero(&(server_addr.sin_zero),8); 
@@ -58,7 +61,7 @@ int run_server(int server_port, char* html_file_path)
   }
       
   // once you get here, the server is set up and about to start listening
-  printf("\nServer configured to listen on port %d\n", server_port);
+  printf("\nServer configured to listen on port %d\n", port_number);
   fflush(stdout);
 
   // 4. accept
@@ -109,14 +112,6 @@ int run_server(int server_port, char* html_file_path)
     // 6. send: send the outgoing message (response) over the socket
     // note that the second argument is a char*, and the third is the number of chars	
     send(fd, html, strlen(html), 0);
-
-    // TEST
-    // while (1) {
-    //   bytes_received = recv(fd,request,1024,0);
-    //   if (bytes_received == 0) continue;
-    //   request[bytes_received] = '\0';
-    //   printf("This is the incoming request:\n%s\n", request);
-    // }
 
     // 7. close: close the connection
     close(fd);
@@ -209,19 +204,27 @@ int run_server(int server_port, char* html_file_path)
   return 0;
 }
 
-// for the purpose of starting a new thread with read_usb
-void* run_read_usb(void* v) {
+// for the purpose of starting a new thread with run_server
+void* t_run_server(void* v) {
 
-  read_usb((char*)v);
+  run_server();
   return v;
 
 }
 
 // for the purpose of starting a new thread for client communication
-void* run_handle_client(void* v) {
+void* t_handle_client(void* v) {
 
   // TODO
   return v;
+}
+
+// for the purpose of starting a new thread with read_usb
+void* t_read_usb(void* v) {
+
+  read_usb((char*)v);
+  return v;
+
 }
 
 int main(int argc, char *argv[])
@@ -237,22 +240,43 @@ int main(int argc, char *argv[])
   memset(http_buffer, 0, BUFFER_SIZE);
   memset(http_message, 0, BUFFER_SIZE);
 
-  int port_number = atoi(argv[1]);
+  // set global port number
+  port_number = atoi(argv[1]);
   if (port_number <= 1024) {
     printf("\nPlease specify a port number greater than 1024\n");
     exit(-1);
   }
 
+  // set global html_file_path
+  html_file_path = malloc(strlen(argv[3]));
+  html_file_path[0] = '\0';
+  strcpy(html_file_path, argv[3]);
+
+  // thread variables
   int ret_val;
-  pthread_t t1;
+  pthread_t t_usb, t_server;
 
   // run read_usb
-  ret_val = pthread_create(&t1, NULL, &run_read_usb, &argv[2][0]);
+  ret_val = pthread_create(&t_usb, NULL, &t_read_usb, &argv[2][0]);
   if (ret_val != 0) {
     perror("read_usb thread creation");
     exit(1);
   }
 
   // start server
-  run_server(port_number, argv[3]);
+  ret_val = pthread_create(&t_server, NULL, &t_run_server, NULL);
+  if (ret_val != 0) {
+    perror("run_server thread creation");
+    exit(1);
+  }
+
+  // wait for user input
+  char c;
+  while (1) {
+    c = getc(stdin);
+    if (c == 'q') {
+      printf("Server shutting down...\n");
+      exit(0);
+    }
+  }
 }
