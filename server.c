@@ -110,6 +110,14 @@ int run_server(int server_port, char* html_file_path)
     // note that the second argument is a char*, and the third is the number of chars	
     send(fd, html, strlen(html), 0);
 
+    // TEST
+    // while (1) {
+    //   bytes_received = recv(fd,request,1024,0);
+    //   if (bytes_received == 0) continue;
+    //   request[bytes_received] = '\0';
+    //   printf("This is the incoming request:\n%s\n", request);
+    // }
+
     // 7. close: close the connection
     close(fd);
     printf("Server closed connection\n");
@@ -119,7 +127,7 @@ int run_server(int server_port, char* html_file_path)
     exit(1);
   }
   
-  // wait for Arduino to reboot
+  // wait for Arduino to reboot/page to load
   sleep(3);
   
   // Keep socket open, do Ajax stuff and communicate with client
@@ -156,14 +164,13 @@ int run_server(int server_port, char* html_file_path)
       char reply[1024];
       reply[0] = '\0';
 
-      // TODO: process incoming request, make appropriate response
+      // TODO: process incoming request
 
       // send message
-      strcat(reply, "HTTP/1.1 200 OK\nContent-Type: text/json\n\n{\"temp\": \"");
+      strcat(reply, "HTTP/1.1 200 OK\nContent-Type: text/plain\n\n");
       pthread_mutex_lock(&read_lock);
-        strcat(reply, http_message);
+          strcat(reply, http_message); // http_message is global, from read_usb.h
       pthread_mutex_unlock(&read_lock);
-      strcat(reply, "\"}");
 
       // 6. send: send the outgoing message (response) over the socket
       // note that the second argument is a char*, and the third is the number of chars 

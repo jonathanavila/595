@@ -292,7 +292,6 @@ void UpdateRGB (byte Temperature_H)
 ****************************************************************************/
 void SerialMonitorPrint (byte Temperature_H, int Decimal, bool IsPositive)
 {
-    Serial.print("The temperature is ");
     if (!IsPositive)
     {
       Serial.print("-");
@@ -300,7 +299,6 @@ void SerialMonitorPrint (byte Temperature_H, int Decimal, bool IsPositive)
     Serial.print(Temperature_H, DEC);
     Serial.print(".");
     Serial.print(Decimal, DEC);
-    Serial.print(" degrees C");
     Serial.print("\n\n");
 }
     
