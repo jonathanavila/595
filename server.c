@@ -213,8 +213,7 @@ void handle_connection(int t_id) {
     send(client_fds[t_id], reply, strlen(reply), 0);
 
   } else { // unhandled request
-    perror("request");
-    exit(1);
+    // do nothing
   }
 
   // 7. close: close the connection
