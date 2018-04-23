@@ -23,39 +23,45 @@ var interData = setInterval(function() {
 var interChart = setInterval(function() {
 		updateChart();
 	}, 1000);
-
+var numOfErrors = 0;
 
 function updateData() {
-    x0++;
     var req;
-
     if (onOff == "On") {
         req = current_url + "temp?"+lastStatType+convertTempAppended()
     } else {
         req = current_url + "temp?"+"o"+convertTempAppended()
     }
-    $.ajax({     
-        type: "POST",
-        url: req,
-        success: function (data) {
-            console.log(y0);   
-            y0 = data;
-        },
-    });
-    if (y0 == -1) {
-        if (recieving) {
-            recieving = false;
-            document.getElementById("recieving").value = "Not recieving";
+    try {
+        $.ajax({     
+            type: "POST",
+            url: req,
+            success: function (data) {
+                y0 = data;
+                if (y0 == 9999.9) {
+                    numOfErrors++;
+                    if (recieving && numErrors > 5) {
+                        recieving = false;
+                        document.getElementById("recieving").value = "Arduino disconnected";
+                    }
+                }
+                else {
+                    if (recieving = false) {
+                        recieving = true;
+                        document.getElementById("recieving").value = "Arduino connected";
+                        numOfErrors = 0;
+                    }
+                    x0++;
+                    console.log(y0);
+                    temps.push({"x": x0, "y": y0});
+                }
+            },
 
-        }
-    } else {
-        if (recieving = false) {
-            recieving = true;
-            document.getElementById("recieving").value = "Recieving";
-
-        }
-        y0 = 30 + 10*Math.random();
-        temps.push({"x": x0, "y": y0});
+        });
+    } catch (e) {
+        console.log('catch', e);
+        document.getElementById("recieving").value = "Console Off!";
+        clearInterval(interData);
     }
 }
 
@@ -69,7 +75,6 @@ function updateChart() {
     if (temps.length <= Number(lastTimeFrame)){
         maximum = Number(lastTimeFrame);
     }
-
 
     var x = d3.scaleLinear().domain([minimum, maximum]).range([0, width]);
 	var y = d3.scaleLinear().domain([0, convertTemperature(50)]).range([height, 0]);

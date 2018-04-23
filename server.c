@@ -208,6 +208,9 @@ int main(int argc, char *argv[])
   }
 
   // open file
+
+//make this a function taht we can call during the server 
+//and make fd a global variable 
   int fd = open(argv[2], O_RDWR | O_NOCTTY | O_NDELAY);
   if (fd < 0) {
   perror("Could not open file\n");
@@ -224,6 +227,8 @@ int main(int argc, char *argv[])
 
   // TODO: check ret_val
   ret_val = pthread_create(&t1, NULL, &run_read_usb, &fd);
+
+  //create a new thread
 
   run_server(port_number, fd, argv[3]);
 }
