@@ -18,7 +18,7 @@
 
 // buffers & message
 char    read_buffer[BUFFER_SIZE], http_buffer[BUFFER_SIZE], http_message[BUFFER_SIZE], 
-        write_buffer[BUFFER_SIZE], request_buffer[BUFFER_SIZE];
+        write_buffer[BUFFER_SIZE];
 
 pthread_mutex_t read_lock, write_lock;
 
