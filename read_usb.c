@@ -61,7 +61,7 @@ int read_usb(char* file_name) {
     // write message if it exists
     pthread_mutex_lock(&write_lock);
 
-      if (failed_reads < FAILED_READ_LIMIT && write_buffer[0] != '\0') {
+      if (failed_reads == 0 && write_buffer[0] != '\0') {
 
         int bytes_written = write(fd, &write_buffer[0], sizeof(char) * 7);
         if (bytes_written < 7) {

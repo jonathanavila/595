@@ -232,7 +232,7 @@ int main(int argc, char *argv[])
       exit(-1);
   }
 
-  // memset some buffers
+  // memset buffers where necessary
   memset(write_buffer, 0, BUFFER_SIZE);
   memset(http_buffer, 0, BUFFER_SIZE);
   memset(http_message, 0, BUFFER_SIZE);
