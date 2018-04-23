@@ -1,5 +1,5 @@
+<html>
 <!DOCTYPE html>
-<html lang="en">
 <meta charset="utf-8">
 <head>
 <script src="https://code.jquery.com/jquery.js"></script>
@@ -12,11 +12,9 @@
   var lastTemp = 23;
   var recieving = true;
 
-  var url = window.location.href;
-  var arr = url.split("/");
+  var current_url = window.location.href;
+  var arr = current_url.split("/");
   var result = arr[0] + "//" + arr[2];
-
-//   console.log(url);
 
   $(document).ready(function() {
 
@@ -304,9 +302,8 @@ function updateData() {
         type: "POST",
         url: req,
         success: function (data) {
-            // console.log(y0);
+            console.log(y0);   
             y0 = data;
-            console.log(y0);
         },
     });
     console.log(req);
@@ -314,6 +311,7 @@ function updateData() {
         if (recieving) {
             recieving = false;
             document.getElementById("recieving").value = "Not recieving";
+
         }
     } else {
         if (recieving = false) {

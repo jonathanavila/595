@@ -1,10 +1,13 @@
-var lastStatType = "C"
+var lastStatType = "c"
 var lastTimeFrame = "10"
 var onOff = "On"
 var lastTemperatureType = "Celsius"
 var lastTemp = 23;
 var recieving = true;
 
+var current_url = window.location.href;
+var arr = url.split("/");
+var result = arr[0] + "//" + arr[2];
 
 $(document).ready(function() {
 
@@ -26,22 +29,21 @@ $(document).ready(function() {
 				onOff = "Off"
 				clearInterval(interChart);
 				document.getElementById("display").value = "";
-				$.ajax({
-					type: "GET",
-					url: "http://localhost:3001/off"
-				});
+				// $.ajax({
+				// 	type: "GET",
+				// 	url: "http://localhost:3001/off"
+				// });
 			} else {
 				onOff = "On"
 				getStat();
 				interChart = setInterval(function() {
 					updateChart();}, 1000);
 				}
-				$.ajax({
-					type: "GET",
-					url: "http://localhost:3001/on"
-				});
+				// $.ajax({
+				// 	type: "GET",
+				// 	url: "http://localhost:3001/on"
+				// });
 		}
-		updateData();
 	})
 
 	$('select').on('change', function() {
@@ -58,20 +60,18 @@ $(document).ready(function() {
 				getStat();
 			} 
 		}
-		updateData();
-
 	});
 
 });
 
 getStat = function() {
-	if (lastStatType == "H") {
+	if (lastStatType == "h") {
 		getHigh();
 	}
-	else if (lastStatType == "L") {
+	else if (lastStatType == "l") {
 		getLow();
 	}
-	else if (lastStatType == "A") {
+	else if (lastStatType == "a") {
 		getAverage();
 	}
 	else {
@@ -160,10 +160,10 @@ convertTemperature = function(val) {
 //gives you temperature value 
 convertTempAppended = function() {
 	if (lastTemperatureType == "Celsius") {
-		return lastTemp.toFixed(1)+"C";
+		return lastTemp.toFixed(1)+"c";
 	}
 	else {
-		return lastTemp.toFixed(1)+"F";
+		return lastTemp.toFixed(1)+"f";
 	} 
 }
 

@@ -1,24 +1,22 @@
+<html>
 <!DOCTYPE html>
-<html lang="en">
 <meta charset="utf-8">
 <head>
 <script src="https://code.jquery.com/jquery.js"></script>
 <script src="https://d3js.org/d3.v4.min.js"></script>
 <script type="text/javascript">
-  var lastStatType = "c"
-  var lastTimeFrame = "10"
-  var onOff = "On"
-  var lastTemperatureType = "Celsius"
-  var lastTemp = 23;
-  var recieving = true;
+ var lastStatType = "c"
+var lastTimeFrame = "10"
+var onOff = "On"
+var lastTemperatureType = "Celsius"
+var lastTemp = 23;
+var recieving = true;
 
-  var url = window.location.href;
-  var arr = url.split("/");
-  var result = arr[0] + "//" + arr[2];
+var current_url = window.location.href;
+var arr = current_url.split("/");
+var result = arr[0] + "//" + arr[2];
 
-//   console.log(url);
-
-  $(document).ready(function() {
+$(document).ready(function() {
 
   document.getElementById("recieving").value = "Recieving";
 
@@ -38,14 +36,20 @@
         onOff = "Off"
         clearInterval(interChart);
         document.getElementById("display").value = "";
-
+        // $.ajax({
+        //  type: "GET",
+        //  url: "http://localhost:3001/off"
+        // });
       } else {
         onOff = "On"
         getStat();
         interChart = setInterval(function() {
           updateChart();}, 1000);
         }
-
+        // $.ajax({
+        //  type: "GET",
+        //  url: "http://localhost:3001/on"
+        // });
     }
   })
 
@@ -90,12 +94,13 @@ getAverage = function() {
     for (var i = 0; i < temps.length; i++) {
       sum += Number(temps[i].y)
     }
+    console.log(avg)
   } else {
     for (var i = temps.length - num; i < temps.length; i++) {
       sum += Number(temps[i].y)
     }
   }
-  avg = sum / num;
+  avg = sum / num
   document.getElementById("display").value = convertTemperature(avg);
   
 }
@@ -180,7 +185,6 @@ getSubArray = function() {
     return temps.slice(startInterval, temps.length - 1)
   }
 }
-
 </script>
 
 <style>
@@ -251,10 +255,10 @@ text-align: right;
         <select 
        class="stat"
        selected="Actual">
-             <option value='c'>Actual</option>
-             <option value='a'>Average</option>
-             <option value='h'>High</option>
-             <option value='l'>Low</option>
+             <option value='C'>Actual</option>
+             <option value='A'>Average</option>
+             <option value='H'>High</option>
+             <option value='L'>Low</option>
         </select></td> 
       <td colspan='4'><input id='display' name='display' disabled></input></td>
     </div>
@@ -265,19 +269,21 @@ text-align: right;
 </body>
 
 <script type="text/javascript">
-  
+/*
+ * Implement all your JavaScript in this file!
+ */
+
 var display = null; 
-var temps = [];
+var temps = [{"x": 0, "y": 27.02}];
 
 var y0 = 0
-var x0 = -1
+var x0 = 0
 
 
 var height = 320;
 var width = 520;
 
 var svg = d3.select("#chart").append("svg").attr("width", width + 30).attr("height", height + 30);
-
 
 
 var interData = setInterval(function() {
@@ -288,41 +294,45 @@ var interData = setInterval(function() {
 var interChart = setInterval(function() {
     updateChart();
   }, 1000);
-
-var req;
-
+var numOfErrors = 0;
 
 function updateData() {
-    x0++;
-
+    var req;
     if (onOff == "On") {
-        req = current_url + "temp?"+lastStatType+convertTempAppended();
+        req = current_url + "temp?"+lastStatType+convertTempAppended()
     } else {
-        req = current_url + "temp?"+"o"+convertTempAppended();
+        req = current_url + "temp?"+"o"+convertTempAppended()
     }
-    $.ajax({     
-        type: "POST",
-        url: req,
-        success: function (data) {
-            // console.log(y0);
-            y0 = data;
-            console.log(y0);
-        },
-    });
-    console.log(req);
-    if (y0 == -1) {
-        if (recieving) {
-            recieving = false;
-            document.getElementById("recieving").value = "Not recieving";
-        }
-    } else {
-        if (recieving = false) {
-            recieving = true;
-            document.getElementById("recieving").value = "Recieving";
+    try {
+        $.ajax({     
+            type: "POST",
+            url: req,
+            success: function (data) {
+                y0 = data;
+                if (y0 == 9999.9) {
+                    numOfErrors++;
+                    if (recieving && numErrors > 5) {
+                        recieving = false;
+                        document.getElementById("recieving").value = "Arduino disconnected";
+                    }
+                }
+                else {
+                    if (recieving = false) {
+                        recieving = true;
+                        document.getElementById("recieving").value = "Arduino connected";
+                        numOfErrors = 0;
+                    }
+                    x0++;
+                    console.log(y0);
+                    temps.push({"x": x0, "y": y0});
+                }
+            },
 
-        }
-        y0 = 30 + 10*Math.random();
-        temps.push({"x": x0, "y": y0});
+        });
+    } catch (e) {
+        console.log('catch', e);
+        document.getElementById("recieving").value = "Console Off!";
+        clearInterval(interData);
     }
 }
 
@@ -336,7 +346,6 @@ function updateChart() {
     if (temps.length <= Number(lastTimeFrame)){
         maximum = Number(lastTimeFrame);
     }
-
 
     var x = d3.scaleLinear().domain([minimum, maximum]).range([0, width]);
   var y = d3.scaleLinear().domain([0, convertTemperature(50)]).range([height, 0]);
@@ -373,7 +382,10 @@ function updateChart() {
 }
 </script>
 
-</div>
+  </div>
+
+
+
 
 
 
