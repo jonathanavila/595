@@ -131,7 +131,9 @@ void loop()
       //Serial.println("String: " + incoming);
       //incoming = Serial.readString();
       //incoming = "c28.8f";
-      
+      if(incoming[1] == 'N') {
+        continue;
+      }
       if (incoming[0] == 'h') {
         MakeRed();
         current = false;
