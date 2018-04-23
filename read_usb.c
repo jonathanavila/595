@@ -82,7 +82,7 @@ int read_usb(char* file_name) {
         if (failed_reads == FAILED_READ_LIMIT) {
           printf("\n\n\tArduino disconnected!\nTemperature data transmission suspended.\n\n");
           http_message[0] = '\0';
-          strcat(http_message, "9999.9");
+          strcat(http_message, READ_FAILURE_FLAG);
         } else if (failed_reads > FAILED_READ_LIMIT) {
           failed_reads = FAILED_READ_LIMIT + 1;
         }

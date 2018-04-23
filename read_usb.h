@@ -12,8 +12,9 @@
 #include <unistd.h>
 #include <string.h>
 
-#define BUFFER_SIZE   101
+#define BUFFER_SIZE         101
 #define FAILED_READ_LIMIT   25000000
+#define READ_FAILURE_FLAG   "9999.9"
 
 // buffers & message
 char    read_buffer[BUFFER_SIZE], http_buffer[BUFFER_SIZE], http_message[BUFFER_SIZE], 
