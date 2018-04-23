@@ -302,7 +302,7 @@ function updateData() {
         type: "POST",
         url: req,
         success: function (data) {
-            // console.log(y0);   
+            // console.log(y0);
             y0 = data;
             console.log(y0);
         },
@@ -312,7 +312,6 @@ function updateData() {
         if (recieving) {
             recieving = false;
             document.getElementById("recieving").value = "Not recieving";
-
         }
     } else {
         if (recieving = false) {

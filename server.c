@@ -147,26 +147,45 @@ int run_server(int server_port, char* html_file_path)
       // null-terminate the string
       request[bytes_received] = '\0';
       // print it to standard out
-      printf("This is the incoming request:\n%s\n", request);
+      // printf("This is the incoming request:\n%s\n\n", request);
       
-      // TODO send AJAX data
-      // dummy write
-//       pthread_mutex_lock(&write_lock);
-//         if (msg_temp == 0) {
-//           write_buffer[0] = 'b';
-//           msg_temp = 1;
-//         } else {
-//           write_buffer[0] = 'r';
-//           msg_temp = 0;
-//         }
-//       pthread_mutex_unlock(&write_lock);
+      // process incoming request
+      memset(request_buffer, 0, BUFFER_SIZE);
 
+      // extract first line of request (contains query string)
+      int request_length = strlen(request);
+      for (int i = 0; i < request_length; i++) {
+        if (request[i] == '\n') {
+          request_buffer[i] = '\0';
+          break;
+        }
+        else request_buffer[i] = request[i];
+      }
+
+      // extract query string from first line of request
+      request_length = strlen(request_buffer);
+      for (int i = 0; i < request_length; i++) {
+        if (request_buffer[i] == '?') { // query string starts with '?'
+          for (int j = 0; j < 6; j++) {
+            request_buffer[j] = request_buffer[i + j + 1];
+          }
+          request_buffer[6] = '\0'; // query always 6 characters long
+          break;
+        }
+      }
+
+      // printf("Processed request: %s\n", request_buffer);
+
+      // write querty string (client state) to usb file
+      pthread_mutex_lock(&write_lock);
+        write_buffer[0] = '\0';
+        strcpy(write_buffer, request_buffer);
+      pthread_mutex_unlock(&write_lock);
+
+      // create HTTP reply
       char reply[1024];
       reply[0] = '\0';
 
-      // TODO: process incoming request
-
-      // send message
       strcat(reply, "HTTP/1.1 200 OK\nContent-Type: text/plain\n\n");
       pthread_mutex_lock(&read_lock);
           strcat(reply, http_message); // http_message is global, from read_usb.h
@@ -224,9 +243,13 @@ int main(int argc, char *argv[])
   int ret_val;
   pthread_t t1;
 
-  // TODO: check ret_val
+  // run read_usb
   ret_val = pthread_create(&t1, NULL, &run_read_usb, &argv[2][0]);
+  if (ret_val != 0) {
+    perror("read_usb thread creation");
+    exit(1);
+  }
 
-  // run_server(port_number, fd, argv[3]);
+  // start server
   run_server(port_number, argv[3]);
 }

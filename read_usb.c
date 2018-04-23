@@ -57,7 +57,7 @@ int read_usb(char* file_name) {
       configure(fd);
     }
 
-    // dummy write
+    // write message if it exists
     pthread_mutex_lock(&write_lock);
 
       if (failed_reads < FAILED_READ_LIMIT && write_buffer[0] != '\0') {
@@ -72,11 +72,6 @@ int read_usb(char* file_name) {
       }
 
     pthread_mutex_unlock(&write_lock);
-
-    // if (failed_reads >= FAILED_READ_LIMIT) {
-    //   sleep(3);
-    //   configure(fd);
-    // }
 
     bytes_read = read(fd, read_buffer, BUFFER_SIZE - 1);
 
@@ -123,7 +118,7 @@ int read_usb(char* file_name) {
           pthread_mutex_lock(&read_lock);
             http_message[0] = '\0';
             strcpy(http_message, http_buffer);
-            printf("%s\n", http_message);
+            // printf("%s\n", http_message); // for testing
           pthread_mutex_unlock(&read_lock);
 
           // reinitialize http_buffer
