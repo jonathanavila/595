@@ -128,7 +128,7 @@ void loop()
     if(Serial.available() > 0) {
       incoming = "";
       incoming = Serial.readString();
-      Serial.println("String: " + incoming);
+      //Serial.println("String: " + incoming);
       //incoming = Serial.readString();
       //incoming = "c28.8f";
       
@@ -206,7 +206,7 @@ void loop()
     }
     
     /* Display temperature on the 7-Segment */
-    if(current == true) {
+    if(current == true && celsius == true) {
       Dis_7SEG (Decimal, Temperature_H, Temperature_L, IsPositive, celsius);
     }
     

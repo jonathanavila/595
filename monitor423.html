@@ -308,7 +308,7 @@ function updateData() {
             type: "POST",
             url: req,
             success: function (data) {
-                y0 = data;
+                y0 = Number(data);
                 if (y0 == 9999.9) {
                     numOfErrors++;
                     if (recieving && numErrors > 5) {

@@ -174,7 +174,7 @@ int run_server(int server_port, char* html_file_path)
         }
       }
 
-      // printf("Processed request: %s\n", request_buffer);
+      printf("Processed request: %s\n", request_buffer);
 
       // write querty string (client state) to usb file
       pthread_mutex_lock(&write_lock);
@@ -232,7 +232,10 @@ int main(int argc, char *argv[])
       exit(-1);
   }
 
+  // memset some buffers
   memset(write_buffer, 0, BUFFER_SIZE);
+  memset(http_buffer, 0, BUFFER_SIZE);
+  memset(http_message, 0, BUFFER_SIZE);
 
   int port_number = atoi(argv[1]);
   if (port_number <= 1024) {
