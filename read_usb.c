@@ -24,14 +24,21 @@ void configure(int fd) {
 }
 
 // int read_usb(char* file_name) {
-int read_usb(int fd, char* file_name) {
+int read_usb(char* file_name) {
 
   // global variable to count failed reads
   unsigned long int failed_reads = 0;
 
-  /*
-  Write the rest of the program below, using the read and write system calls.
-  */
+  int fd = open(file_name, O_RDWR | O_NOCTTY | O_NDELAY);
+  if (fd < 0) {
+  perror("Could not open file\n");
+  exit(1);
+  }
+  else {
+  printf("Successfully opened %s for reading and writing\n", file_name);
+  }
+
+  configure(fd);
 
   // memset buffers and http_message
   memset(read_buffer, 0, BUFFER_SIZE);
@@ -44,7 +51,6 @@ int read_usb(int fd, char* file_name) {
   while (1) {
 
     if (failed_reads >= FAILED_READ_LIMIT) {
-      printf("Sleeping...\n");
       sleep(3);
       fd = open(file_name, O_RDWR | O_NOCTTY | O_NDELAY);
       if (fd < 0) continue;

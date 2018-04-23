@@ -193,7 +193,7 @@ int run_server(int server_port, char* html_file_path)
 // for the purpose of starting a new thread with read_usb
 void* run_read_usb(void* v) {
 
-  read_usb(*(int*)v);
+  read_usb((char*)v);
   return v;
 
 }
@@ -221,23 +221,11 @@ int main(int argc, char *argv[])
     exit(-1);
   }
 
-  // open file
-  int fd = open(argv[2], O_RDWR | O_NOCTTY | O_NDELAY);
-  if (fd < 0) {
-  perror("Could not open file\n");
-  exit(1);
-  }
-  else {
-  printf("Successfully opened %s for reading and writing\n", argv[2]);
-  }
-
-  configure(fd);
-
   int ret_val;
   pthread_t t1;
 
   // TODO: check ret_val
-  ret_val = pthread_create(&t1, NULL, &run_read_usb, &fd);
+  ret_val = pthread_create(&t1, NULL, &run_read_usb, &argv[2][0]);
 
   // run_server(port_number, fd, argv[3]);
   run_server(port_number, argv[3]);

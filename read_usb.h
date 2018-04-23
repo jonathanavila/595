@@ -21,5 +21,5 @@ char read_buffer[BUFFER_SIZE], http_buffer[BUFFER_SIZE], http_message[BUFFER_SIZ
 pthread_mutex_t read_lock, write_lock;
 
 void configure(int);
-int read_usb(int, char*);
+int read_usb(char*);
 int write_usb(int, char*);
