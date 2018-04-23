@@ -18,7 +18,7 @@ var result = arr[0] + "//" + arr[2];
 
 $(document).ready(function() {
 
-  document.getElementById("recieving").value = "Recieving";
+document.getElementById("recieving").value = "Arduino connected!";
 
   $('button').on('click', function() {
     var buttonPressed = $(this);
@@ -289,12 +289,12 @@ var svg = d3.select("#chart").append("svg").attr("width", width + 30).attr("heig
 
 var interData = setInterval(function() {
         updateData();
-}, 1000);
+}, 2000);
 
 
 var interChart = setInterval(function() {
     updateChart();
-  }, 1000);
+  }, 2000);
 var numOfErrors = 0;
 
 function updateData() {
@@ -310,9 +310,11 @@ function updateData() {
             url: req,
             success: function (data) {
                 y0 = Number(data);
-                if (y0 == 9999.9) {
+                //console.log(y0);
+                if (data == '9999.9') {
+                    //console.log("disconnected");
                     numOfErrors++;
-                    if (recieving && numErrors > 5) {
+                    if (recieving && numOfErrors > 5) {
                         recieving = false;
                         document.getElementById("recieving").value = "Arduino disconnected";
                     }
