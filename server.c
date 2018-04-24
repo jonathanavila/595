@@ -125,8 +125,7 @@ void handle_connection(int t_id) {
   // buffer to read data into
   char request[2048];
 
-  printf("Client Thread %d: about to receive request\n", t_id);
-  printf("Client Thread %d: fd: %d\n", t_id, client_fds[t_id]);
+  // printf("Client Thread %d: fd: %d\n", t_id, client_fds[t_id]); // TESTING
 
   // 5. recv: read incoming message (request) into buffer
   int bytes_received = recv(client_fds[t_id],request,1024,0);
@@ -206,6 +205,7 @@ void handle_connection(int t_id) {
     strcat(reply, "HTTP/1.1 200 OK\nContent-Type: text/plain\n\n");
     pthread_mutex_lock(&read_lock);
         strcat(reply, http_message); // http_message is global, from read_usb.h
+        printf("Client Thread %d: http_message: %s\n", t_id, http_message); // TESTING
     pthread_mutex_unlock(&read_lock);
 
     // 6. send: send the outgoing message (response) over the socket
@@ -213,7 +213,7 @@ void handle_connection(int t_id) {
     send(client_fds[t_id], reply, strlen(reply), 0);
 
   } else { // unhandled request
-    // do nothing
+    printf("Client Thread %d: Unhandled request: \n%s\n", t_id, request); // TESTING
   }
 
   // 7. close: close the connection
