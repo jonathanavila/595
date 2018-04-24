@@ -128,11 +128,3 @@ int read_usb(char* file_name) {
     }
   }
 }
-
-// for writing to the arduino
-int write_usb(int fd, char* command) {
-
-  int ret_val = write(fd, command, sizeof(char) * 6);
-
-  return ret_val;
-}
