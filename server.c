@@ -207,11 +207,11 @@ void handle_connection(int t_id) {
     pthread_mutex_lock(&read_lock);
         strcat(reply, http_message); // http_message is global, from read_usb.h
         printf("Client Thread %d: http_message: %s\n", t_id, http_message); // TESTING
-    pthread_mutex_unlock(&read_lock);
 
-    // 6. send: send the outgoing message (response) over the socket
-    // note that the second argument is a char*, and the third is the number of chars 
-    send(client_fds[t_id], reply, strlen(reply), 0);
+        // 6. send: send the outgoing message (response) over the socket
+        // note that the second argument is a char*, and the third is the number of chars 
+        send(client_fds[t_id], reply, strlen(reply), 0);
+    pthread_mutex_unlock(&read_lock);
 
   } else { // unhandled request
     printf("Client Thread %d: Unhandled request: \n%s\n", t_id, request); // TESTING
