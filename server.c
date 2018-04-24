@@ -104,8 +104,9 @@ int run_server()
     // iterate through client threads, setting all completed threads to null
     pthread_mutex_lock(&client_lock);
       for (int i = 0; i < NUM_THREADS; i++) {
-        if (client_threads[i] != NULL && client_fds[i] == -1) {
-          // free(client_threads[i]);
+        if (client_fds[i] == -2) {
+          client_fds[i] = -1;
+          // free(client_threads[i]); // Causes error. Do they free themselves?
           client_threads[i] = NULL;
         }
       }
@@ -222,7 +223,7 @@ void handle_connection(int t_id) {
 
   // flag this thread's id for completion
   pthread_mutex_lock(&client_lock);
-    client_fds[t_id] = -1;
+    client_fds[t_id] = -2;
   pthread_mutex_unlock(&client_lock);
 }
 
