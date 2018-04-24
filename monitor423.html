@@ -312,15 +312,16 @@ function updateData() {
                 y0 = Number(data);
                 //console.log(y0);
                 if (data == '9999.9') {
-                    //console.log("disconnected");
+                    //console.log(recieving);
                     numOfErrors++;
                     if (recieving && numOfErrors > 5) {
+                      //console.log("changing");
                         recieving = false;
                         document.getElementById("recieving").value = "Arduino disconnected";
                     }
                 }
                 else {
-                    if (recieving = false) {
+                    if (recieving == false) {
                         recieving = true;
                         document.getElementById("recieving").value = "Arduino connected";
                         numOfErrors = 0;

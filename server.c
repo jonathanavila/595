@@ -18,10 +18,20 @@ http://www.binarii.com/files/papers/c_sockets.txt
 
 #include "read_usb.h"
 
+#define NUM_THREADS   50
+
+void* t_handle_connection(void*);
+void handle_connection(int);
+
+// client handler thread variables
+pthread_t client_threads[NUM_THREADS];
+int client_fds[NUM_THREADS], t_current;
+pthread_mutex_t client_lock;
+
+// main server thread variables
 int port_number = 0;
 char* html_file_path = NULL;
 
-// int run_server(int port_number, char* html_file_path)
 int run_server()
 {
 
@@ -67,26 +77,65 @@ int run_server()
   // 4. accept
   int sin_size = sizeof(struct sockaddr_in);
 
+  // accept connections and create threads as appropriate
   int fd = -1;
-  
-  // Initial GET, all HTML
-  fd = accept(sock, (struct sockaddr *)&client_addr,(socklen_t *)&sin_size);
+  while (1) {
 
-  int bytes_received;
+    fd = accept(sock, (struct sockaddr *)&client_addr,(socklen_t *)&sin_size);
 
-  // process request
-  if (fd != -1) {
+    if (fd == -1) {
+      perror("accept connection");
+      exit(1);
+    }
+
     printf("Server got a connection from (%s, %d)\n", inet_ntoa(client_addr.sin_addr),ntohs(client_addr.sin_port));
 
-    // buffer to read data into
-    char request[1024];
+    // iterate through client threads, create new thread with first available id
+    for (int i = 0; i < NUM_THREADS; i++) {
+      if (client_threads[i] == NULL) {
+        client_threads[i] = malloc(sizeof(pthread_t));
+        client_fds[i] = fd;
+        t_current = i;
+        pthread_create(&client_threads[i], NULL, &t_handle_connection, &t_current);
+        break;
+      }
+    }
 
-    // 5. recv: read incoming message (request) into buffer
-    bytes_received = recv(fd,request,1024,0);
-    // null-terminate the string
-    request[bytes_received] = '\0';
-    // print it to standard out
-    printf("This is the incoming request:\n%s\n", request);
+    // iterate through client threads, setting all completed threads to null
+    pthread_mutex_lock(&client_lock);
+      for (int i = 0; i < NUM_THREADS; i++) {
+        if (client_fds[i] == -2) {
+          client_fds[i] = -1;
+          // free(client_threads[i]); // Causes error. Do they free themselves?
+          client_threads[i] = NULL;
+        }
+      }
+    pthread_mutex_unlock(&client_lock);
+  }
+  
+  // 8. close: close the socket
+  close(sock);
+  printf("Server shutting down\n");
+
+  return 0;
+}
+
+// handle client communication (only to be run in new thread)
+void handle_connection(int t_id) {
+
+  // buffer to read data into
+  char request[2048];
+
+  // printf("Client Thread %d: fd: %d\n", t_id, client_fds[t_id]); // TESTING
+
+  // 5. recv: read incoming message (request) into buffer
+  int bytes_received = recv(client_fds[t_id],request,1024,0);
+  // null-terminate the string
+  request[bytes_received] = '\0';
+  // printf("Client Thread %d: This is the incoming request:\n%s\n", t_id, request); // TESTING
+
+  // process request
+  if (request[0] == 'G') { // GET
 
     // read in html page
     char html[10000];
@@ -110,98 +159,72 @@ int run_server()
     fclose(fp);
 
     // 6. send: send the outgoing message (response) over the socket
-    // note that the second argument is a char*, and the third is the number of chars	
-    send(fd, html, strlen(html), 0);
+    // note that the second argument is a char*, and the third is the number of chars 
+    send(client_fds[t_id], html, strlen(html), 0);
 
-    // 7. close: close the connection
-    close(fd);
-    printf("Server closed connection\n");
+  } else if (request[0] == 'P') { // POST
 
-  } else {
-    perror("accept connection");
-    exit(1);
-  }
-  
-  // wait for Arduino to reboot/page to load
-  sleep(3);
-  
-  // Keep socket open, do Ajax stuff and communicate with client
-  while (1) {
-      
-    fd = accept(sock, (struct sockaddr *)&client_addr,(socklen_t *)&sin_size);
+    char request_buffer[BUFFER_SIZE];
+    
+    // process incoming request
+    memset(request_buffer, 0, BUFFER_SIZE);
 
-    // process request
-    if (fd != -1) {
-      printf("Server got a connection from (%s, %d)\n", inet_ntoa(client_addr.sin_addr),ntohs(client_addr.sin_port));
-
-      // buffer to read data into
-      char request[1024];
-
-      // // 5. recv: read incoming message (request) into buffer
-      bytes_received = recv(fd,request,1024,0);
-      // null-terminate the string
-      request[bytes_received] = '\0';
-      // print it to standard out
-      // printf("This is the incoming request:\n%s\n\n", request);
-      
-      // process incoming request
-      memset(request_buffer, 0, BUFFER_SIZE);
-
-      // extract first line of request (contains query string)
-      int request_length = strlen(request);
-      for (int i = 0; i < request_length; i++) {
-        if (request[i] == '\n') {
-          request_buffer[i] = '\0';
-          break;
-        }
-        else request_buffer[i] = request[i];
+    // extract first line of request (contains query string)
+    int request_length = strlen(request);
+    for (int i = 0; i < request_length; i++) {
+      if (request[i] == '\n') {
+        request_buffer[i] = '\0';
+        break;
       }
-
-      // extract query string from first line of request
-      request_length = strlen(request_buffer);
-      for (int i = 0; i < request_length; i++) {
-        if (request_buffer[i] == '?') { // query string starts with '?'
-          for (int j = 0; j < 6; j++) {
-            request_buffer[j] = request_buffer[i + j + 1];
-          }
-          request_buffer[6] = '\0'; // query always 6 characters long
-          break;
-        }
-      }
-
-      printf("Processed request: %s\n", request_buffer);
-
-      // write querty string (client state) to usb file
-      pthread_mutex_lock(&write_lock);
-        write_buffer[0] = '\0';
-        strcpy(write_buffer, request_buffer);
-      pthread_mutex_unlock(&write_lock);
-
-      // create HTTP reply
-      char reply[1024];
-      reply[0] = '\0';
-
-      strcat(reply, "HTTP/1.1 200 OK\nContent-Type: text/plain\n\n");
-      pthread_mutex_lock(&read_lock);
-          strcat(reply, http_message); // http_message is global, from read_usb.h
-      pthread_mutex_unlock(&read_lock);
-
-      // 6. send: send the outgoing message (response) over the socket
-      // note that the second argument is a char*, and the third is the number of chars 
-      send(fd, reply, strlen(reply), 0);
-      
-      // 7. close: close the connection
-      // NOTE: if you don't do this, the page never loads
-      close(fd);
-      printf("Server closed connection\n");
+      else request_buffer[i] = request[i];
     }
+
+    // extract query string from first line of request
+    request_length = strlen(request_buffer);
+    for (int i = 0; i < request_length; i++) {
+      if (request_buffer[i] == '?') { // query string starts with '?'
+        for (int j = 0; j < 6; j++) {
+          request_buffer[j] = request_buffer[i + j + 1];
+        }
+        request_buffer[6] = '\0'; // query always 6 characters long
+        break;
+      }
+    }
+
+    printf("Client Thread %d: Processed request: %s\n", t_id, request_buffer); // TESTING
+
+    // write querty string (client state) to usb file
+    pthread_mutex_lock(&write_lock);
+      write_buffer[0] = '\0';
+      strcpy(write_buffer, request_buffer);
+    pthread_mutex_unlock(&write_lock);
+
+    // create HTTP reply
+    char reply[1024];
+    reply[0] = '\0';
+
+    strcat(reply, "HTTP/1.1 200 OK\nContent-Type: text/plain\n\n");
+    pthread_mutex_lock(&read_lock);
+        strcat(reply, http_message); // http_message is global, from read_usb.h
+        printf("Client Thread %d: http_message: %s\n", t_id, http_message); // TESTING
+
+        // 6. send: send the outgoing message (response) over the socket
+        // note that the second argument is a char*, and the third is the number of chars 
+        send(client_fds[t_id], reply, strlen(reply), 0);
+    pthread_mutex_unlock(&read_lock);
+
+  } else { // unhandled request
+    printf("Client Thread %d: Unhandled request: \n%s\n", t_id, request); // TESTING
   }
 
-  // 8. close: close the socket
-  close(sock);
-  printf("Server shutting down\n");
+  // 7. close: close the connection
+  close(client_fds[t_id]);
+  printf("Client Thread %d: Server closed connection\n", t_id);
 
-  return 0;
+  // flag this thread's id for completion
+  pthread_mutex_lock(&client_lock);
+    client_fds[t_id] = -2;
+  pthread_mutex_unlock(&client_lock);
 }
 
 // for the purpose of starting a new thread with run_server
@@ -213,9 +236,9 @@ void* t_run_server(void* v) {
 }
 
 // for the purpose of starting a new thread for client communication
-void* t_handle_client(void* v) {
+void* t_handle_connection(void* v) {
 
-  // TODO
+  handle_connection(*(int*)v);
   return v;
 }
 
@@ -235,10 +258,15 @@ int main(int argc, char *argv[])
       exit(-1);
   }
 
-  // memset buffers where necessary
+  // memset global arrays where necessary
   memset(write_buffer, 0, BUFFER_SIZE);
   memset(http_buffer, 0, BUFFER_SIZE);
   memset(http_message, 0, BUFFER_SIZE);
+  memset(client_threads, 0, NUM_THREADS);
+  memset(client_fds, -1, NUM_THREADS);
+  // for (int i = 0; i < NUM_THREADS; i++) {
+  //   client_threads[i] = NULL;
+  // }
 
   // set global port number
   port_number = atoi(argv[1]);
@@ -263,6 +291,9 @@ int main(int argc, char *argv[])
     exit(1);
   }
 
+  // wait for Arduino to start up
+  sleep(3);
+
   // start server
   ret_val = pthread_create(&t_server, NULL, &t_run_server, NULL);
   if (ret_val != 0) {
@@ -276,6 +307,9 @@ int main(int argc, char *argv[])
     c = getc(stdin);
     if (c == 'q') {
       printf("Server shutting down...\n");
+      pthread_mutex_lock(&read_lock);
+      pthread_mutex_lock(&write_lock);
+      free(html_file_path);
       exit(0);
     }
   }

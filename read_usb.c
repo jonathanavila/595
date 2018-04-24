@@ -60,7 +60,6 @@ int read_usb(char* file_name) {
 
     // write message if it exists
     pthread_mutex_lock(&write_lock);
-
       if (failed_reads == 0 && write_buffer[0] != '\0') {
 
         int bytes_written = write(fd, &write_buffer[0], sizeof(char) * 7);
@@ -71,23 +70,21 @@ int read_usb(char* file_name) {
 
         write_buffer[0] = '\0';
       }
-
     pthread_mutex_unlock(&write_lock);
 
+    // read from usb file
     bytes_read = read(fd, read_buffer, BUFFER_SIZE - 1);
 
-    if (bytes_read == -1) {
+    if (bytes_read == -1) { // something went wrong
 
-      pthread_mutex_lock(&read_lock);
-        failed_reads++;
-        if (failed_reads == FAILED_READ_LIMIT) {
-          printf("\n\n\tArduino disconnected!\nTemperature data transmission suspended.\n\n");
-          http_message[0] = '\0';
-          strcat(http_message, READ_FAILURE_FLAG);
-        } else if (failed_reads > FAILED_READ_LIMIT) {
-          failed_reads = FAILED_READ_LIMIT + 1;
-        }
-      pthread_mutex_unlock(&read_lock);
+      failed_reads++;
+      if (failed_reads == FAILED_READ_LIMIT) {
+        http_message[0] = '\0';
+        strcat(http_message, READ_FAILURE_FLAG);
+        printf("\n\n\tArduino disconnected!\nTemperature data transmission suspended.\n\n");
+      } else if (failed_reads > FAILED_READ_LIMIT) {
+        failed_reads = FAILED_READ_LIMIT + 1;
+      }
       continue;
 
     } else if (bytes_read > 0) {
@@ -130,12 +127,4 @@ int read_usb(char* file_name) {
       }
     }
   }
-}
-
-// for writing to the arduino
-int write_usb(int fd, char* command) {
-
-  int ret_val = write(fd, command, sizeof(char) * 6);
-
-  return ret_val;
 }
